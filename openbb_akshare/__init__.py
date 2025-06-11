@@ -6,7 +6,7 @@ from openbb_akshare.models.company_news import AKShareCompanyNewsFetcher
 # mypy: disable-error-code="list-item"
 
 provider = Provider(
-    name="openbb_akshare",
+    name="akshare",
     description="Data provider for openbb-akshare.",
     # Only add 'credentials' if they are needed.
     # For multiple login details, list them all here.
@@ -15,6 +15,6 @@ provider = Provider(
     # Here, we list out the fetchers showing what our provider can get.
     # The dictionary key is the fetcher's name, used in the `router.py`.
     fetcher_dict={
-        "Example": AKShareCompanyNewsFetcher,
+        "CompanyNews": AKShareCompanyNewsFetcher,
     }
 )
