@@ -28,18 +28,11 @@ class AKshareCompanyNewsQueryParams(CompanyNewsQueryParams):
 
 
 class AKShareCompanyNewsData(CompanyNewsData):
-    """Sample provider data.
+    """AKShare Company News Data."""
 
-    The fields are displayed as-is in the output of the command. In this case, its the
-    Open, High, Low, Close and Volume data.
-    """
-
-    o: float = Field(description="Open price.")
-    h: float = Field(description="High price.")
-    l: float = Field(description="Low price.")
-    c: float = Field(description="Close price.")
-    v: float = Field(description="Volume.")
-    d: str = Field(description="Date")
+    source: Optional[str] = Field(
+        default=None, description="Source of the news article"
+    )
 
 
 class AKShareCompanyNewsFetcher(

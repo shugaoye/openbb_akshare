@@ -5,25 +5,29 @@ set PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple
 ```
 ## Introduction
 
-This is the generated cookiecutter template for the OpenBB Platform v4.
-It is used to help you create a new extension that can be integrated into the existing structure of the OpenBB Platform.
-
-With it you can:
-
-- Create a new extension
-- Build custom commands
-- Interact with the standardization framework
-- Build custom services and applications on top of the framework
+This is the OpenBB extension for AKShare.
 
 ## Getting Started
 
-We recommend you check out the files in the following order:
+After creating the project, you can test it in an OpenBB environment. From a terminal command line, navigate into the folder where the extension is located, then install the package in "editable" mode.
 
-* `openbb_akshare/README.md`
-* `openbb_akshare/models/example.py`
-* `openbb_akshare/provider.py`
-* `openbb_akshare/router.py`
+```bash
+cd akshare
+pip install -e .
+```
 
----
+After installing `openbb-akshare`, you can verify it using the `pip list` command.
 
-🦋 Made with [openbb cookiecutter](https://github.com/openbb-finance/openbb-cookiecutter).
+## Rebuild the Python Interface and Static Assets
+
+The application needs to rebuild the static files in order to recognize any changes to the `fetcher_dict` in the `__init__.py` file. This step is also required to reflect changes to parameters, docstrings, and function signatures.
+
+Open a terminal, start a new Python session, and then run the following commands:
+
+```python
+cd ../openbb
+python
+>>> import openbb
+>>> openbb.build()
+>>> exit()
+```
