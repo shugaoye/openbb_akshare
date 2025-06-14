@@ -23,35 +23,42 @@ class AKShareEquityQuoteData(EquityQuoteData):
     """AKShare Equity Quote Data."""
 
     __alias_dict__ = {
-        "name": "longName",
-        "asset_type": "quoteType",
-        "last_price": "currentPrice",
-        "high": "dayHigh",
-        "low": "dayLow",
-        "prev_close": "previousClose",
-        "year_high": "fiftyTwoWeekHigh",
-        "year_low": "fiftyTwoWeekLow",
-        "ma_50d": "fiftyDayAverage",
-        "ma_200d": "twoHundredDayAverage",
-        "volume_average": "averageVolume",
-        "volume_average_10d": "averageDailyVolume10Day",
+        "symbol": "代码",
+        "name": "名称",
+        "exchange": "交易所",
+        "last_price": "现价",
+        "open": "今开",
+        "close": "均价",
+        "high": "最高",
+        "low": "最低",
+        "prev_close": "昨收",
+        "year_high": "52周最高",
+        "year_low": "52周最低",
+        "volume": "成交量",
+        "change": "涨跌",
+        "participant_timestamp": "时间",
+        "market_cap": "流通值",
+        "pe_ratio": "市盈率(动)",
+        "pe_ratio_ttm": "市盈率(TTM)",
+        "turnover": "成交额",
+        "currency": "货币",
     }
 
-    ma_50d: Optional[float] = Field(
+    market_cap: Optional[float] = Field(
         default=None,
-        description="50-day moving average price.",
+        description="Market capitalization.",
     )
-    ma_200d: Optional[float] = Field(
+    pe_ratio: Optional[float] = Field(
         default=None,
-        description="200-day moving average price.",
+        description="Price-to-earnings ratio.",
     )
-    volume_average: Optional[float] = Field(
+    pe_ratio_ttm: Optional[float] = Field(
         default=None,
-        description="Average daily trading volume.",
+        description="Price-to-earnings ratio (TTM).",
     )
-    volume_average_10d: Optional[float] = Field(
+    turnover: Optional[float] = Field(
         default=None,
-        description="Average daily trading volume in the last 10 days.",
+        description="Turnover of the stock.",
     )
     currency: Optional[str] = Field(
         default=None,
@@ -84,17 +91,35 @@ class AKShareEquityQuoteFetcher(
 
         symbols = query.symbol.split(",")
         results = []
-        fields = ['代码', '52周最高', '流通股', '跌停', '最高', '流通值', '最小交易单位', '涨跌', '每股收益', '昨收', '成交量', '周转率', '52周最低', '名称', '交易所', '市盈率(动)', '基金份额/总股本', '净资产中的商誉', '均价', '涨幅', '振幅', '现价', '今年以来涨幅', '发行日期', '最低', '资产净值/总市值', '股息(TTM)', '股息率(TTM)', '货币', '每股净资产', '市盈率(静)', '成交额', '市净率', '涨停', '市盈率(TTM)', '时间', '今开']
-
+        fields = ['代码', 
+                  '名称', 
+                  '交易所', 
+                  '现价', 
+                  '今开',
+                  '均价', 
+                  '最高', 
+                  '最低', 
+                  '昨收', 
+                  '52周最高', 
+                  '52周最低', 
+                  '成交量', 
+                  '涨跌', 
+                  '时间', 
+                  '流通值', 
+                  '市盈率(动)', 
+                  '市盈率(TTM)',
+                  '成交额', 
+                  '货币']
         async def get_one(symbol):
             """Get the data for one ticker symbol."""
             result: dict = {}
             ticker: dict = {}
             try:
                 ticker_df = ak.stock_individual_spot_xq(symbol)
+                ticker = dict(zip(ticker_df['item'], ticker_df['value']))
             except Exception as e:
                 warn(f"Error getting data for {symbol}: {e}")
-            if ticker_df.empty is False:
+            if ticker:
                 for field in fields:
                     if field in ticker:
                         result[field] = ticker.get(field, None)
