@@ -11,7 +11,10 @@ from openbb_core.provider.standard_models.equity_quote import (
     EquityQuoteQueryParams,
 )
 from pydantic import Field
+import logging
+from openbb_akshare.utils.tools import setup_logger, normalize_symbol, get_symbol_base
 
+logger = logging.getLogger(__name__)
 
 class AKShareEquityQuoteQueryParams(EquityQuoteQueryParams):
     """AKShare Equity Quote Query."""
@@ -115,8 +118,16 @@ class AKShareEquityQuoteFetcher(
             result: dict = {}
             ticker: dict = {}
             try:
+                symbol_b, symbol_f, market = normalize_symbol(symbol)
+                if market == "SH" or market == "SZ":
+                    symbol = market+symbol_b
+                elif market == "BJ":
+                    symbol = "NQ"+symbol_b
                 ticker_df = ak.stock_individual_spot_xq(symbol)
-                ticker = dict(zip(ticker_df['item'], ticker_df['value']))
+                if ticker_df.empty:
+                    logger.debug("ticker_df is empty.")
+                else:
+                    ticker = dict(zip(ticker_df['item'], ticker_df['value']))
             except Exception as e:
                 warn(f"Error getting data for {symbol}: {e}")
             if ticker:
