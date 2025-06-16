@@ -24,10 +24,6 @@ class AKShareHistoricalDividendsQueryParams(HistoricalDividendsQueryParams):
 
 class AKShareHistoricalDividendsData(HistoricalDividendsData):
     """AKShare Historical Dividends Data. All data is split-adjusted."""
-    period_ending: Optional[dateType] = Field(
-        default=None,
-        description="The ending of Report Period.",
-    )
     reported_date: Optional[dateType] = Field(
         default=None,
         description="Earnings Announcement Date.",
@@ -35,10 +31,6 @@ class AKShareHistoricalDividendsData(HistoricalDividendsData):
     description: Optional[str] = Field(
         default=None,
         description="Record date of the historical dividends.",
-    )
-    div_rate: Optional[float] = Field(
-        default=None,
-        description="Share Dividend Rate.",
     )
     record_date: Optional[dateType] = Field(
         default=None,
@@ -54,7 +46,6 @@ class AKShareHistoricalDividendsData(HistoricalDividendsData):
         "record_date",
         "reported_date",
         "ex_dividend_date",
-        "period_ending",
         mode="before",
         check_fields=False,
     )

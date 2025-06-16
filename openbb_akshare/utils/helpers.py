@@ -2,7 +2,7 @@
 
 # pylint: disable=unused-argument,too-many-arguments,too-many-branches,too-many-locals,too-many-statements
 import re
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import Dict, Any, List, Optional, Union
 
 from openbb_core.provider.utils.errors import EmptyDataError
 from openbb_yfinance.utils.references import INTERVALS, MONTHS, PERIODS
@@ -80,3 +80,83 @@ def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     post_tax_per_share = post_tax_total / base_shares
 
     return round(post_tax_per_share, 4)
+
+def get_a_dividends(
+    symbol: str,
+    start_date: Optional[Union[str, "date"]] = None,
+    end_date: Optional[Union[str, "date"]] = None,
+) -> List[Dict]:
+    """
+    Fetches historical dividends for a Shanghai/Shenzhen/Beijing stock symbol.
+
+    Parameters:
+        symbol (str): Stock symbol to fetch dividends for.
+        start_date (Optional[Union[str, date]]): Start date for fetching dividends.
+        end_date (Optional[Union[str, date]]): End date for fetching dividends.
+
+    Returns:
+        DataFrame: DataFrame containing dividend information.
+    """
+    import akshare as ak
+
+    if not symbol:
+        raise EmptyDataError("Symbol cannot be empty.")
+
+    div_df = ak.stock_fhps_detail_ths(symbol)
+    ticker = div_df[['实施公告日',
+                        '分红方案说明',
+                        'A股股权登记日',
+                        'A股除权除息日']]
+    #ticker['amount'] = div_df['分红方案说明'].apply(
+    #    lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
+    #)
+    ticker.rename(columns={'实施公告日': "report_date",
+                            '分红方案说明': "description", 
+                            'A股股权登记日': "record_date",
+                            'A股除权除息日': "ex_dividend_date"}, inplace=True)
+    dividends = ticker.to_dict("records")  # type: ignore
+    
+    if not dividends:
+        raise EmptyDataError(f"No dividend data found for {symbol}.")
+
+    return dividends
+
+def get_hk_dividends(
+    symbol: str,
+    start_date: Optional[Union[str, "date"]] = None,
+    end_date: Optional[Union[str, "date"]] = None,
+) -> List[Dict]:
+    """
+    Fetches historical dividends for a Hong Kong stock symbol.
+
+    Parameters:
+        symbol (str): Stock symbol to fetch dividends for.
+        start_date (Optional[Union[str, date]]): Start date for fetching dividends.
+        end_date (Optional[Union[str, date]]): End date for fetching dividends.
+
+    Returns:
+        DataFrame: DataFrame containing dividend information.
+    """
+    import akshare as ak
+
+    if not symbol:
+        raise EmptyDataError("Symbol cannot be empty.")
+
+    div_df = ak.stock_hk_fhpx_detail_ths(symbol)
+    ticker = div_df[['公告日期',
+                        '方案',
+                        '除净日',
+                        '派息日']]
+    #ticker['amount'] = div_df['分红方案说明'].apply(
+    #    lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
+    #)
+    ticker.rename(columns={'公告日期': "report_date",
+                            '方案': "description", 
+                            '除净日': "record_date",
+                            '派息日': "ex_dividend_date"}, inplace=True)
+    dividends = ticker.to_dict("records")  # type: ignore
+    
+    if not dividends:
+        raise EmptyDataError(f"No dividend data found for {symbol}.")
+
+    return dividends
