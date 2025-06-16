@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 def setup_logger():
     # Create logs directory if it doesn't exist
     log_dir = "logs"
-    log_file = os.path.join(log_dir, "myshare.log")
+    log_file = os.path.join(log_dir, "openbb_akshare.log")
     os.makedirs(log_dir, exist_ok=True)
 
     # Log format

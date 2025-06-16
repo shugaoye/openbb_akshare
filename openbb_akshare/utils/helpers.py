@@ -13,7 +13,7 @@ from .tools import normalize_date, normalize_symbol
 import logging
 from openbb_akshare.utils.tools import setup_logger, normalize_symbol
 
-setup_logger()
+#setup_logger()
 logger = logging.getLogger(__name__)
 
 def ak_download(  # pylint: disable=too-many-positional-arguments
