@@ -1,11 +1,28 @@
 # OpenBB AKShare Extension
 
-```powershell
-set PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple
-```
 ## Introduction
 
 This is the OpenBB extension for AKShare.
+
+## Environment Setup
+We can run and debug openbb-askshare in a Python virutal environment.
+```bash
+python3 -m venv .venv
+```
+
+Activate the virtual environment:
+```bash
+source .venv/bin/activate
+```
+Install the required packages:
+```bash
+pip install openbb-cli
+```
+
+In China, you can use a mirror to speed up the installation process.
+```powershell
+set PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple
+```
 
 ## Getting Started
 

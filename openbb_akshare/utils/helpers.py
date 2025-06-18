@@ -185,13 +185,13 @@ def get_hk_dividends(
     if not symbol:
         raise EmptyDataError("Symbol cannot be empty.")
 
-    div_df = ak.stock_hk_fhpx_detail_ths(symbol)
+    div_df = ak.stock_hk_fhpx_detail_ths(symbol[1:])
     div_df.dropna(inplace=True)
     ticker = div_df[['公告日期',
                         '方案',
                         '除净日',
                         '派息日']]
-    ticker['amount'] = div_df['分红方案说明'].apply(
+    ticker['amount'] = div_df['方案'].apply(
         lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
     )
     ticker.rename(columns={'公告日期': "report_date",
