@@ -41,13 +41,17 @@ def ak_download(  # pylint: disable=too-many-positional-arguments
     return stock_zh_a_hist_df
 
 
+import re
+
 def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     """
-    Parses Chinese dividend description and returns post-tax cash dividend per share.
+    Parses Chinese dividend descriptions and returns post-tax dividend per share.
     
-    Handles formats like:
-        - "10转10.00派1.00元(含税,扣税后0.90元)"
-        - "10派1.04元(含税,扣税后0.936元)"
+    Handles:
+        - Non-dividend cases (return 0)
+        - Per-share direct values (e.g., "每股0.38港元")
+        - Base-share values (e.g., "10派1元")
+        - Complex combinations (e.g., "每股派发现金股利0.088332港元,每10股派送股票股利3股")
 
     Parameters:
         dividend_str (str): Dividend description string
@@ -55,32 +59,70 @@ def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     Returns:
         float: Post-tax dividend amount per share, rounded to 4 decimal places
     """
-    # Extract base shares and pre-tax dividend part
-    base_match = re.search(r'([\d\.]+)[转股]*派([\d\.]+)', dividend_str)
-    after_tax_match = re.search(r'扣税后([\d\.]+)', dividend_str)
-
-    if not base_match:
-        logger.error("Could not parse base shares and pre-tax dividend from the string: %s", dividend_str)
-        #raise ValueError("Could not parse base shares and pre-tax dividend.")
-        return 0
-    if not after_tax_match:
-        logger.error("Could not parse post-tax dividend value from the string: %s", dividend_str)
-        #raise ValueError("Could not parse post-tax dividend value.")
-        return 0
-
-    # Convert extracted values to appropriate types
-    base_shares = int(float(base_match.group(1)))
-    post_tax_total = float(after_tax_match.group(1))
-
-    # Calculate per-share post-tax dividend
-    if not base_shares:
-        logger.error("Base shares cannot be zero or empty from the string: %s", dividend_str)
-        raise ValueError("Base shares cannot be zero or empty.")
+    # Case 1: Non-dividend cases
+    if re.search(r'不分红|不分配不转增|转增.*不分配', dividend_str):
+        return 0.0
     
-    post_tax_per_share = post_tax_total / base_shares
+    # If A股 is present, extract only that part
+    a_share_match = re.search(r'(A股[^,]*)', dividend_str)
+    if a_share_match:
+        dividend_str = a_share_match.group(1)
+    # Remove 'A股' prefix if present
+    dividend_str = dividend_str.replace('A股', '')
 
-    return round(post_tax_per_share, 4)
+     # Extract base shares
+    base_match = re.match(r'(\d+(?:\.\d+)?)', dividend_str)
+    base = float(base_match.group(1)) if base_match else 0.0
 
+    # Extract bonus shares (送)
+    bonus_match = re.search(r'送(\d+(?:\.\d+)?)股', dividend_str)
+    bonus = float(bonus_match.group(1)) if bonus_match else 0.0
+
+    # Extract conversion shares (转)
+    conversion_match = re.search(r'转(\d+(?:\.\d+)?)股', dividend_str)
+    conversion = float(conversion_match.group(1)) if conversion_match else 0.0
+
+    # Extract cash dividend (派)
+    cash_match = re.search(r'派(\d+(?:\.\d+)?)元', dividend_str)
+    cash = float(cash_match.group(1)) if cash_match else 0.0
+
+    if base != 0 and cash != 0:
+        return round(cash / base, 4)
+       
+    # Case 2: Direct per-share values (e.g., "每股0.38港元", "每股人民币0.25元")
+    direct_match = re.search(r'每股[\u4e00-\u9fa5]*([\d\.]+)[^\d]*(?:港元|人民币|元)', dividend_str)
+    if direct_match:
+        return round(float(direct_match.group(1)), 4)
+    
+    # Case 3: Base-share values (e.g., "10派1元", "10转10股派1元")
+    # Match "10转10股派1元" or similar
+    match = re.match(r'(\d+)转(\d+)股派([\d\.]+)元', dividend_str)
+    if match:
+        base = int(match.group(1))
+        bonus = int(match.group(2))
+        cash = float(match.group(3))
+        total_shares = base
+        return round(cash / total_shares, 4)
+    # Handle "10派1元" or "10.00派2.00元"
+    match = re.match(r'(\d+(?:\.\d+)?)派([\d\.]+)元', dividend_str)
+    if match:
+        base = int(float(match.group(1)))
+        cash = float(match.group(2))
+        return round(cash / base, 4)
+
+    base_match = re.search(r'(\d+)(?:[转股]+[\d\.]+)*(?:派|现金股利)([\d\.]+)', dividend_str)
+    if base_match:
+        base_shares = int(float(base_match.group(1)))  # Handle '10.00' cases
+        dividend_amount = float(base_match.group(2))
+        return round(dividend_amount / base_shares, 4)
+    
+    # Case 4: Complex mixed formats (e.g., "每股派发现金股利0.088332港元,每10股派送股票股利3股")
+    complex_match = re.search(r'每股[\u4e00-\u9fa5]*([\d\.]+)[^\d]*(?:港元|人民币|元)', dividend_str)
+    if complex_match:
+        return round(float(complex_match.group(1)), 4)
+    
+    # Default: Return 0 for unrecognized formats
+    return 0.0
 def get_a_dividends(
     symbol: str,
     start_date: Optional[Union[str, "date"]] = None,
@@ -103,13 +145,14 @@ def get_a_dividends(
         raise EmptyDataError("Symbol cannot be empty.")
 
     div_df = ak.stock_fhps_detail_ths(symbol)
+    div_df.dropna(inplace=True)
     ticker = div_df[['实施公告日',
                         '分红方案说明',
                         'A股股权登记日',
                         'A股除权除息日']]
-    #ticker['amount'] = div_df['分红方案说明'].apply(
-    #    lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
-    #)
+    ticker['amount'] = div_df['分红方案说明'].apply(
+        lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
+    )
     ticker.rename(columns={'实施公告日': "report_date",
                             '分红方案说明': "description", 
                             'A股股权登记日': "record_date",
@@ -143,13 +186,14 @@ def get_hk_dividends(
         raise EmptyDataError("Symbol cannot be empty.")
 
     div_df = ak.stock_hk_fhpx_detail_ths(symbol)
+    div_df.dropna(inplace=True)
     ticker = div_df[['公告日期',
                         '方案',
                         '除净日',
                         '派息日']]
-    #ticker['amount'] = div_df['分红方案说明'].apply(
-    #    lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
-    #)
+    ticker['amount'] = div_df['分红方案说明'].apply(
+        lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
+    )
     ticker.rename(columns={'公告日期': "report_date",
                             '方案': "description", 
                             '除净日': "record_date",

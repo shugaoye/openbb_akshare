@@ -1,32 +1,41 @@
 import pytest
 from openbb_akshare.utils.helpers import get_post_tax_dividend_per_share
 
-def test_get_post_tax_dividend_per_share_valid():
-    # Test with normal valid input
-    assert get_post_tax_dividend_per_share("10派1.04元(含税,扣税后0.936元)") == 0.0936
-    
-    # Test with different numbers
-    assert get_post_tax_dividend_per_share("5派2.50元(含税,扣税后2.25元)") == 0.45
-    
-    # Test with larger numbers
-    assert get_post_tax_dividend_per_share("100派15.00元(含税,扣税后13.50元)") == 0.135
 
-def test_get_post_tax_dividend_per_share_invalid():
-    # Test with invalid input formats
-    assert get_post_tax_dividend_per_share("invalid text") == 0.0
-        
-    assert get_post_tax_dividend_per_share("10转3.00") == 0.0
-        
-    assert get_post_tax_dividend_per_share("10派1.04元(含税)") == 0.0
-        
-    assert get_post_tax_dividend_per_share("") == 0.0
-
-def test_get_post_tax_dividend_per_share_edge_cases():
-    # Test with zero values
-    assert get_post_tax_dividend_per_share("10派0元(含税,扣税后0元)") == 0.0
-    
-    # Test with very small numbers
-    assert get_post_tax_dividend_per_share("1000派0.001元(含税,扣税后0.0009元)") == 0.0000
-    
-    # Test with decimal base shares (should still work as it gets converted to int)
-    #assert get_post_tax_dividend_per_share("10.0派1.04元(含税,扣税后0.936元)") == 0.0936
+@pytest.mark.parametrize(
+    "dividend_str,expected",
+    [
+        # Non-dividend cases
+        ("不分红", 0.0),
+        ("不分配不转增", 0.0),
+        ("转增10股不分配", 0.0),
+        ("公司不分红", 0.0),
+        ("10送2股", 0.0),
+        ("10转5股", 0.0),
+        # Direct per-share values
+        ("每股0.38港元", 0.38),
+        ("每股人民币0.25元", 0.25),
+        ("每股派发现金股利0.088332港元", 0.0883),
+        ("每股派发现金红利0.1234元", 0.1234),
+        # Base-share values
+        ("10送1.5股派1.5元", 0.15),
+        ("10转5股派1.5元(含税)", 0.15),
+        ("10送1股转4股派0.5元(含税)", 0.05),
+        ("10派1元", 0.1),
+        ("10转10股派1元", 0.1),
+        ("10派0.5元", 0.05),
+        ("10.00派2.00元", 0.2),
+        ("10现金股利1.5元", 0.15),
+        ('A股10送3.5股派1.5元,B股10送2.426股派1.04元', 0.15),
+        # Complex mixed formats
+        ("每股派发现金股利0.088332港元,每10股派送股票股利3股", 0.0883),
+        ("每股派发现金红利0.05元，10转10股派1元", 0.05),
+        # Unrecognized/edge cases
+        ("", 0.0),
+        ("未知格式", 0.0),
+        ("每10股送3股", 0.0),
+    ]
+)
+def test_get_post_tax_dividend_per_share(dividend_str, expected):
+    result = get_post_tax_dividend_per_share(dividend_str)
+    assert result == pytest.approx(expected, rel=1e-4)

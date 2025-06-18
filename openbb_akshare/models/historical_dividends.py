@@ -40,7 +40,6 @@ class AKShareHistoricalDividendsData(HistoricalDividendsData):
         default=None,
         description="Declaration date of the historical dividends.",
     )
-
     @field_validator(
         "declaration_date",
         "record_date",
@@ -78,20 +77,14 @@ class AKShareHistoricalDividendsFetcher(
     ) -> List[Dict]:
         """Extract the raw data from AKShare."""
         # pylint: disable=import-outside-toplevel
-        from openbb_akshare.utils.helpers import get_post_tax_dividend_per_share
-        import akshare as ak
+        from openbb_akshare.utils.tools import normalize_symbol
+        from openbb_akshare.utils.helpers import get_a_dividends, get_hk_dividends
 
-        div_df = ak.stock_fhps_detail_em(symbol=query.symbol)
-        #ticker = div_df[['报告期', '业绩披露日期', '现金分红-现金分红比例描述', '现金分红-股息率', '预案公告日', '股权登记日', '除权除息日']]
-        ticker = div_df[['现金分红-现金分红比例描述',
-                         '除权除息日']]
-        ticker['amount'] = div_df['现金分红-现金分红比例描述'].apply(
-            lambda x: get_post_tax_dividend_per_share(x) if isinstance(x, str) else None
-        )
-        #ticker.rename(columns={"报告期": "period_ending", "业绩披露日期": "reported_date", "现金分红-现金分红比例描述": "description", "现金分红-股息率": "div_rate", "预案公告日": "declaration_date", "股权登记日": "record_date", "除权除息日": "ex_dividend_date"}, inplace=True)
-        ticker.rename(columns={"现金分红-现金分红比例描述": "description", 
-                               "除权除息日": "ex_dividend_date"}, inplace=True)
-        dividends = ticker.to_dict("records")  # type: ignore
+        symbol_b, symbol_f, market = normalize_symbol(query.symbol)
+        if market == "HK":
+            dividends = get_hk_dividends(symbol_b)
+        else:
+            dividends = get_a_dividends(symbol_b)
 
         logger.info(
             "Fetched historical dividends:\n%s",
