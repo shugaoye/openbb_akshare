@@ -1,6 +1,6 @@
 # 如何使用AKShare作为OpenBB的数据源
 
-**OpenBB** 作为**开源金融数据平台**，致力于为投资者、分析师与开发者提供免费透明的金融数据接口。关于 OpenBB 的详细介绍，可查阅OpenBB 的介绍以及如何使用，请参阅[OpenBB的介绍以及如何使用OpenBB助力A股港股的金融数据分析]()。
+**OpenBB** 作为**开源金融数据平台**，致力于为投资者、分析师与开发者提供免费透明的金融数据接口。关于OpenBB的介绍以及如何使用，请参阅[OpenBB的介绍以及如何使用OpenBB助力A股港股的金融数据分析](https://blog.csdn.net/qq_29953771/article/details/148971007?fromshare=blogdetail&sharetype=blogdetail&sharerId=148971007&sharerefer=PC&sharesource=qq_29953771&sharefrom=from_link)。
 
 OpenBB虽支持多源数据接口，但中国区（含香港）金融数据获取主要依赖Yahoo Finance。该平台作为免费基础数据源虽能满足基本需求，但对中港市场的覆盖深度仍显不足。更关键的是，中国内地用户需借助VPN方可访问此服务，形成显著使用门槛。
 
@@ -85,7 +85,7 @@ openbb
 2025 Jun 26, 03:11 (🦋) /news/ $ company --symbol 000002 --provider akshare
 ```
 
-输入上述命令，我们可以看到下面的结果。OpenBB CLI的结果会显示在一个WebView里。如下图所示：
+输入上述命令，我们可以看到下面的结果。OpenBB CLI的结果会显示在一个WebView里，如下图所示：
 
 ![openbb04](docs/images/openbb04.png)
 

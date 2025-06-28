@@ -1,6 +1,6 @@
 # How to Use AKShare as a Data Source for OpenBB
 
-**OpenBB**, as an open-source financial data platform, is dedicated to providing free and transparent financial data interfaces for investors, analysts, and developers. For a detailed introduction to OpenBB and its usage, please refer to [Introduction to OpenBB and How to Use It to Aid Financial Data Analysis of China A-share and Hong Kong Stocks]().
+**OpenBB**, as an open-source financial data platform, is dedicated to providing free and transparent financial data interfaces for investors, analysts, and developers. For a detailed introduction to OpenBB and its usage, please refer to [Introduction to OpenBB and How to Use It to Aid Financial Data Analysis of China A-share and Hong Kong Stocks](https://medium.com/@shugaoye/introduction-to-openbb-and-how-to-use-it-to-aid-financial-data-analysis-of-china-a-share-and-hong-f4bbe480399a).
 
 Although OpenBB supports multi-source data interfaces, the acquisition of financial data in China (including Hong Kong) mainly relies on Yahoo Finance. As a free basic data source, it can meet basic needs, but its coverage depth for the Chinese and Hong Kong markets is still insufficient. More importantly, mainland Chinese users need to use a VPN to access this service, creating significant usage barriers.
 
