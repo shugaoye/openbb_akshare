@@ -41,14 +41,12 @@ class AKShareBalanceSheetData(BalanceSheetData):
     """AKShare Balance Sheet Data."""
 
     __alias_dict__ = {
-        "short_term_investments": "other_short_term_investments",
-        "net_receivables": "receivables",
-        "inventories": "inventory",
-        "total_current_assets": "current_assets",
-        "plant_property_equipment_gross": "gross_ppe",
-        "plant_property_equipment_net": "net_ppe",
-        "total_common_equity": "stockholders_equity",
-        "total_equity_non_controlling_interests": "total_equity_gross_minority_interest",
+        "period_ending": "REPORT_DATE",
+        "fiscal_period": "REPORT_TYPE",
+        "fiscal_year": "REPORT_DATE_NAME",
+        "totalEquity": "TOTAL_EQUITY",
+        "totalDebt": "TOTAL_LIABILITIES",
+        "totalAssets": "TOTAL_ASSETS"
     }
 
     @field_validator("period_ending", mode="before", check_fields=False)
@@ -81,38 +79,16 @@ class AKShareBalanceSheetFetcher(
     ) -> list[dict]:
         """Extract the data from the AKShare endpoints."""
         # pylint: disable=import-outside-toplevel
-        import json  # noqa
-        from curl_adapter import CurlCffiAdapter
-        from numpy import nan
-        from openbb_core.provider.utils.errors import EmptyDataError
-        from openbb_core.provider.utils.helpers import (
-            get_requests_session,
-            to_snake_case,
-        )
-        from yfinance import Ticker
+        import akshare as ak
+        import pandas as pd
+        from openbb_akshare.utils.tools import normalize_symbol
 
-        period = "yearly" if query.period == "annual" else "quarterly"  # type: ignore
-        session = get_requests_session()
-        session.mount("https://", CurlCffiAdapter())
-        session.mount("http://", CurlCffiAdapter())
-        data = Ticker(
-            query.symbol,
-            session=session,
-        ).get_balance_sheet(as_dict=False, pretty=False, freq=period)
+        symbol_b, symbol_f, market = normalize_symbol(query.symbol)
+        symbol_em = f"SH{symbol_b}"
+        stock_balance_sheet_by_yearly_em_df = ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
+        balance_sheet_em = stock_balance_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "REPORT_DATE_NAME", "TOTAL_ASSETS", "TOTAL_LIABILITIES", "TOTAL_EQUITY"]]
 
-        if data is None:
-            raise EmptyDataError()
-
-        if query.limit:
-            data = data.iloc[:, : query.limit]
-
-        data.index = [to_snake_case(i) for i in data.index]
-        data = data.reset_index().sort_index(ascending=False).set_index("index")
-        data = data.replace({nan: None}).to_dict()
-        data = [{"period_ending": str(key), **value} for key, value in data.items()]
-        data = json.loads(json.dumps(data))
-
-        return data
+        return balance_sheet_em.to_dict(orient="records")
 
     @staticmethod
     def transform_data(

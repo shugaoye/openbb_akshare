@@ -6,6 +6,7 @@ from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
 from openbb_akshare.models.available_indices import AKShareAvailableIndicesFetcher
+from openbb_akshare.models.balance_sheet import AKShareBalanceSheetFetcher
 
 # mypy: disable-error-code="list-item"
 
@@ -20,6 +21,7 @@ provider = Provider(
     # The dictionary key is the fetcher's name, used in the `router.py`.
     fetcher_dict={
         "AvailableIndices": AKShareAvailableIndicesFetcher,
+        "BalanceSheet": AKShareBalanceSheetFetcher,
         "CompanyNews": AKShareCompanyNewsFetcher,
         "EquityQuote": AKShareEquityQuoteFetcher,
         "EquityHistorical": AKShareEquityHistoricalFetcher,
