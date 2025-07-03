@@ -87,7 +87,7 @@ class AKShareBalanceSheetFetcher(
         symbol_em = f"SH{symbol_b}"
         stock_balance_sheet_by_yearly_em_df = ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
         balance_sheet_em = stock_balance_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "REPORT_DATE_NAME", "TOTAL_ASSETS", "TOTAL_LIABILITIES", "TOTAL_EQUITY"]]
-        balance_sheet_em['REPORT_DATE_NAME'] = balance_sheet_em['REPORT_DATE_NAME'].str.extract('(\d{4})')[0].astype(int)
+        balance_sheet_em['REPORT_DATE_NAME'] = pd.to_datetime(balance_sheet_em['REPORT_DATE']).dt.year.astype(int)
 
         return balance_sheet_em.to_dict(orient="records")
 
