@@ -1,3 +1,17 @@
+
+## OpenBB Models Supported
+
+Please refer to the following table. AKShare only supports part of the Hong Kong stock data.
+
+| akshare                        | A股  | 港股  |
+| ------------------------------ | --- | --- |
+| AKShareAvailableIndicesData    | x   |     |
+| AKShareBalanceSheetData        | x   |     |
+| AKShareCompanyNewsData         | x   |     |
+| AKShareEquityHistoricalData    | x   | x   |
+| AKShareEquityQuoteData         | x   | x   |
+| AKShareHistoricalDividendsData | x   | x   |
+
 ## BalanceSheetData
 
 ### FMP
@@ -76,7 +90,7 @@ https://financialmodelingprep.com/api/v3/balance-sheet-statement/0000320193?peri
 ]
 ```
 
-所有键（key）中文：
+中文：
 
 ```json
 [
@@ -139,4 +153,3 @@ https://financialmodelingprep.com/api/v3/balance-sheet-statement/0000320193?peri
 ]
 ```
 
-如果需要进一步处理或格式化，请告诉我！
