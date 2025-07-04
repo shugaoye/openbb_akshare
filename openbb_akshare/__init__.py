@@ -1,12 +1,13 @@
 """openbb_akshare OpenBB Platform Provider."""
 
 from openbb_core.provider.abstract.provider import Provider
+from openbb_akshare.models.available_indices import AKShareAvailableIndicesFetcher
+from openbb_akshare.models.balance_sheet import AKShareBalanceSheetFetcher
 from openbb_akshare.models.company_news import AKShareCompanyNewsFetcher
 from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
-from openbb_akshare.models.available_indices import AKShareAvailableIndicesFetcher
-from openbb_akshare.models.balance_sheet import AKShareBalanceSheetFetcher
+from openbb_akshare.models.income_statement import AKShareIncomeStatementFetcher
 
 # mypy: disable-error-code="list-item"
 
@@ -26,5 +27,6 @@ provider = Provider(
         "EquityQuote": AKShareEquityQuoteFetcher,
         "EquityHistorical": AKShareEquityHistoricalFetcher,
         "HistoricalDividends": AKShareHistoricalDividendsFetcher,
+        "IncomeStatement": AKShareIncomeStatementFetcher,
     }
 )
