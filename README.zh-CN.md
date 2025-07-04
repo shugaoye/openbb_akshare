@@ -2,9 +2,9 @@
 
 **OpenBB** 作为**开源金融数据平台**，致力于为投资者、分析师与开发者提供免费透明的金融数据接口。关于OpenBB的介绍以及如何使用，请参阅[OpenBB的介绍以及如何使用OpenBB助力A股港股的金融数据分析](https://blog.csdn.net/qq_29953771/article/details/148971007?fromshare=blogdetail&sharetype=blogdetail&sharerId=148971007&sharerefer=PC&sharesource=qq_29953771&sharefrom=from_link)。
 
-OpenBB虽支持多源数据接口，但中国区（含香港）金融数据获取主要依赖Yahoo Finance。该平台作为免费基础数据源虽能满足基本需求，但对中港市场的覆盖深度仍显不足。更关键的是，中国内地用户需借助VPN方可访问此服务，形成显著使用门槛。
+OpenBB虽支持多个数据源，但中国区（含香港）金融数据获取主要依赖Yahoo Finance。该平台作为免费基础数据源虽能满足基本需求，但对中港市场的覆盖深度仍显不足。更关键的是，中国内地用户需借助VPN方可访问此服务，形成显著使用门槛。
 
-为增强大中华区服务能力，OpenBB亟待完善本地化金融数据源建设。其中付费端主流方案包括Wind、东方财富Choice和同花顺iFind（主要面向机构客户）；免费端则以开源工具AKShare为核心解决方案。AKShare通过整合东财/同花顺/腾讯/新浪/雪球等平台数据接口，已成为国内Python生态中数据覆盖最全面、更新最及时、开发者体验最优的金融数据聚合库之一。
+要查询A股和港股数据，OpenBB亟待完善本地化金融数据源的接入。A股和港股数据，付费的主流方案包括Wind、东方财富Choice和同花顺iFind（主要面向机构客户）；免费数据则以开源的AKShare为主要替代方案。AKShare通过整合东财/同花顺/腾讯/新浪/雪球等平台的免费数据，已成为国内Python生态中数据覆盖最全面、更新最及时、开发者体验最优的金融数据聚合库之一。
 
 `openbb_akshare`项目作为 OpenBB 的数据源扩展，可实现 AKShare 数据在 OpenBB 平台的无缝接入。以下为详细使用指南：
 
