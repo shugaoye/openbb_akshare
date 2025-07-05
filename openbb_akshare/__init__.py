@@ -3,6 +3,7 @@
 from openbb_core.provider.abstract.provider import Provider
 from openbb_akshare.models.available_indices import AKShareAvailableIndicesFetcher
 from openbb_akshare.models.balance_sheet import AKShareBalanceSheetFetcher
+from openbb_akshare.models.cash_flow import AKShareCashFlowStatementFetcher
 from openbb_akshare.models.company_news import AKShareCompanyNewsFetcher
 from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
@@ -23,6 +24,7 @@ provider = Provider(
     fetcher_dict={
         "AvailableIndices": AKShareAvailableIndicesFetcher,
         "BalanceSheet": AKShareBalanceSheetFetcher,
+        "CashFlowStatement": AKShareCashFlowStatementFetcher,
         "CompanyNews": AKShareCompanyNewsFetcher,
         "EquityQuote": AKShareEquityQuoteFetcher,
         "EquityHistorical": AKShareEquityHistoricalFetcher,
