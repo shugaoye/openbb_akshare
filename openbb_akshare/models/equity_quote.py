@@ -28,45 +28,15 @@ class AKShareEquityQuoteData(EquityQuoteData):
     __alias_dict__ = {
         "symbol": "代码",
         "name": "名称",
-        "exchange": "交易所",
-        "last_price": "现价",
+        "last_price": "最新价",
         "open": "今开",
-        "close": "均价",
         "high": "最高",
         "low": "最低",
         "prev_close": "昨收",
-        "year_high": "52周最高",
-        "year_low": "52周最低",
         "volume": "成交量",
-        "change": "涨跌",
-        "participant_timestamp": "时间",
-        "market_cap": "流通值",
-        "pe_ratio": "市盈率(动)",
-        "pe_ratio_ttm": "市盈率(TTM)",
-        "turnover": "成交额",
-        "currency": "货币",
+        "change": "涨跌额",
+        "change_percent": "涨跌幅",
     }
-
-    market_cap: Optional[float] = Field(
-        default=None,
-        description="Market capitalization.",
-    )
-    pe_ratio: Optional[float] = Field(
-        default=None,
-        description="Price-to-earnings ratio.",
-    )
-    pe_ratio_ttm: Optional[float] = Field(
-        default=None,
-        description="Price-to-earnings ratio (TTM).",
-    )
-    turnover: Optional[float] = Field(
-        default=None,
-        description="Turnover of the stock.",
-    )
-    currency: Optional[str] = Field(
-        default=None,
-        description="Currency of the price.",
-    )
 
 
 class AKShareEquityQuoteFetcher(
@@ -80,7 +50,7 @@ class AKShareEquityQuoteFetcher(
         return AKShareEquityQuoteQueryParams(**params)
 
     @staticmethod
-    async def aextract_data(
+    def extract_data(
         query: AKShareEquityQuoteQueryParams,
         credentials: Optional[Dict[str, str]],
         **kwargs: Any,
@@ -93,55 +63,30 @@ class AKShareEquityQuoteFetcher(
         import akshare as ak
 
         symbols = query.symbol.split(",")
-        results = []
-        fields = ['代码', 
-                  '名称', 
-                  '交易所', 
-                  '现价', 
-                  '今开',
-                  '均价', 
-                  '最高', 
-                  '最低', 
-                  '昨收', 
-                  '52周最高', 
-                  '52周最低', 
-                  '成交量', 
-                  '涨跌', 
-                  '时间', 
-                  '流通值', 
-                  '市盈率(动)', 
-                  '市盈率(TTM)',
-                  '成交额', 
-                  '货币']
-        async def get_one(symbol):
+        all_data = []
+
+        stock_zh_a_spot_em_df = ak.stock_zh_a_spot_em()
+        stock_quotes = stock_zh_a_spot_em_df[["代码", "名称", "最新价", "今开", "最高", "最低", "涨跌幅", "涨跌额", "成交量", "昨收"]]
+        def get_one(symbol):
             """Get the data for one ticker symbol."""
-            result: dict = {}
-            ticker: dict = {}
+            quote = stock_quotes[stock_quotes["代码"] == symbol]
+            if quote.empty:
+                return {"symbol": symbol, "error": "Symbol not found"}
+            return quote
+
+        for symbol in symbols:
             try:
-                symbol_b, symbol_f, market = normalize_symbol(symbol)
-                if market == "SH" or market == "SZ":
-                    symbol = market+symbol_b
-                elif market == "BJ":
-                    symbol = "NQ"+symbol_b
-                ticker_df = ak.stock_individual_spot_xq(symbol)
-                if ticker_df.empty:
-                    logger.debug("ticker_df is empty.")
-                else:
-                    ticker = dict(zip(ticker_df['item'], ticker_df['value']))
+                # Validate symbol format if applicable (e.g., length, allowed characters)
+                if not isinstance(symbol, str) or len(symbol) != 6:
+                    raise ValueError(f"Invalid symbol format: {symbol}")
+                
+                data = get_one(symbol)
+                all_data.append(data.to_dict(orient="records")[0])
+                
             except Exception as e:
-                warn(f"Error getting data for {symbol}: {e}")
-            if ticker:
-                for field in fields:
-                    if field in ticker:
-                        result[field] = ticker.get(field, None)
-                if result:
-                    results.append(result)
-
-        tasks = [get_one(symbol) for symbol in symbols]
-
-        await asyncio.gather(*tasks)
-
-        return results
+                print(f"Error fetching data for symbol {symbol}: {e}")
+                continue
+        return all_data
 
     @staticmethod
     def transform_data(
