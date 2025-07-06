@@ -50,24 +50,21 @@ class AKShareCurrencyHistoricalData(CurrencyHistoricalData):
         "open": "今开",
         "high": "最高",
         "low": "最低",
+        "close": "最新价",
+        "change": "振幅",    
         "symbol": "代码",
         "name": "名称",
-        "last_rate": "最新价",
-        "change": "振幅",    
         }
 
+    change: Optional[float] = Field(
+        default=None,
+        description="Change in the price from the previous close.",
+    )
     symbol: str = Field(
         description="Can use CURR1-CURR2 or CURR1CURR2 format."
     )
     name: str = Field(
         description="Name of currency pair."
-    )
-    last_rate: Optional[float] = Field(
-        default=None, description="Last rate of the currency pair."
-    )
-    change: Optional[float] = Field(
-        default=None,
-        description="Change in the price from the previous close.",
     )
 
 

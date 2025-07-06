@@ -31,19 +31,19 @@ class AKShareCurrencySnapshotsData(CurrencySnapshotsData):
         "open": "今开",
         "high": "最高",
         "low": "最低",
-        "symbol": "代码",
-        "name": "名称",
+        "base_currency": "代码",
+        "counter_currency": "名称",
         "prev_close": "昨收",
         "change": "涨跌额",
         "change_percent": "涨跌幅",
     }
 
-    symbol: str = Field(
-        description="Can use CURR1-CURR2 or CURR1CURR2 format."
-    )
-    name: str = Field(
-        description="Name of currency pair."
-    )
+    # symbol: str = Field(
+    #     description="Can use CURR1-CURR2 or CURR1CURR2 format."
+    # )
+    # name: str = Field(
+    #     description="Name of currency pair."
+    # )
     change: Optional[float] = Field(
         description="The change in the price from the previous close.", default=None
     )
@@ -81,7 +81,9 @@ class AKShareCurrencySnapshotsFetcher(
         import akshare as ak
 
         forex_spot_em_df = ak.forex_spot_em()
-        return forex_spot_em_df.to_dict(orient="records")
+        new_df=forex_spot_em_df.drop(columns=["序号"])
+
+        return new_df.to_dict(orient="records")
 
     @staticmethod
     def transform_data(
@@ -91,63 +93,4 @@ class AKShareCurrencySnapshotsFetcher(
     ) -> List[AKShareCurrencySnapshotsData]:
         """Filter by the query parameters and validate the model."""
         # pylint: disable=import-outside-toplevel
-        from datetime import timezone  # noqa
-        from pandas import DataFrame, concat  # noqa
-        from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
-
-        if not data:
-            raise EmptyDataError("No data was returned from the AKShare endpoint.")
-
-        # Drop all the zombie columns AKShare returns.
-        df = (
-            DataFrame(data)
-            .dropna(how="all", axis=1)
-            .drop(columns=["exchange", "avgVolume"])
-        )
-
-        new_df = DataFrame()
-
-        # Filter for the base currencies requested and the quote_type.
-        for symbol in query.base.split(","):
-            temp = (
-                df.query("`symbol`.str.startswith(@symbol)")
-                if query.quote_type == "indirect"
-                else df.query("`symbol`.str.endswith(@symbol)")
-            ).rename(columns={"symbol": "base_currency", "name": "counter_currency"})
-            temp["base_currency"] = symbol
-            temp["counter_currency"] = (
-                [d.split("/")[1] for d in temp["counter_currency"]]
-                if query.quote_type == "indirect"
-                else [d.split("/")[0] for d in temp["counter_currency"]]
-            )
-            # Filter for the counter currencies, if requested.
-            if query.counter_currencies is not None:
-                counter_currencies = (  # noqa: F841  # pylint: disable=unused-variable
-                    query.counter_currencies
-                    if isinstance(query.counter_currencies, list)
-                    else query.counter_currencies.split(",")
-                )
-                temp = (
-                    temp.query("`counter_currency`.isin(@counter_currencies)")
-                    .set_index("counter_currency")
-                    # Sets the counter currencies in the order they were requested.
-                    .filter(items=counter_currencies, axis=0)
-                    .reset_index()
-                ).rename(columns={"index": "counter_currency"})
-            # If there are no records, don't concatenate.
-            if len(temp) > 0:
-                # Convert the Unix timestamp to a datetime.
-                temp.timestamp = temp.timestamp.apply(
-                    lambda x: safe_fromtimestamp(x, tz=timezone.utc)
-                )
-                new_df = concat([new_df, temp])
-            if len(new_df) == 0:
-                raise EmptyDataError(
-                    "No data was found using the applied filters. Check the parameters."
-                )
-            # Fill and replace any NaN values with NoneType.
-            new_df = new_df.fillna("N/A").replace("N/A", None)
-        return [
-            AKShareCurrencySnapshotsData.model_validate(d)
-            for d in new_df.reset_index(drop=True).to_dict(orient="records")
-        ]
+        return [AKShareCurrencySnapshotsData.model_validate(d) for d in data]
