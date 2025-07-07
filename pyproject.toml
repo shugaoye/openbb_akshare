@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openbb-akshare"
-version = "0.4.11"
+version = "0.4.12"
 description = "AKShare extension for OpenBB"
 authors = ["Roger Ye <shugaoye@yahoo.com>"]
 license = "AGPL-3.0-only"
