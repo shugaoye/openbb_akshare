@@ -86,6 +86,8 @@ def normalize_symbol(symbol: str) -> tuple[str, str, str]:
         >>> normalize_symbol("00700")
         ("00700", "00700.HK", "HK")
     """
+    symbol = symbol.strip()  # Remove leading/trailing whitespace
+    
     # If symbol already contains market suffix
     if "." in symbol:
         base, market = symbol.split(".")

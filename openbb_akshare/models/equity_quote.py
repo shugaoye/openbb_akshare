@@ -21,6 +21,11 @@ class AKShareEquityQuoteQueryParams(EquityQuoteQueryParams):
 
     __json_schema_extra__ = {"symbol": {"multiple_items_allowed": True}}
 
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to use a cached request. The quote is cached for one hour.",
+    )
+
 
 class AKShareEquityQuoteData(EquityQuoteData):
     """AKShare Equity Quote Data."""
@@ -63,20 +68,13 @@ class AKShareEquityQuoteFetcher(
         symbols = query.symbol.split(",")
         all_data = []
 
-        stock_zh_a_spot_em_df = ak.stock_zh_a_spot_em()
-        stock_hk_spot_em_df = ak.stock_hk_spot_em()
-        def get_one(symbol, a_df, hk_df) -> pd.DataFrame:
+        def get_one(symbol) -> pd.DataFrame:
             """Get the data for one ticker symbol."""
+            from openbb_akshare.utils.fetch_quote import load_cached_data
             quote = pd.DataFrame()
             symbol_b, symbol_f, market = normalize_symbol(symbol)
-            if market == "HK":
-                if not hk_df.empty:
-                    stock_quotes = hk_df[["代码", "名称", "最新价", "今开", "最高", "最低", "涨跌幅", "涨跌额", "成交量", "昨收"]]
-                    quote = stock_quotes[stock_quotes["代码"] == symbol]
-            else:
-                if not a_df.empty:
-                    stock_quotes = a_df[["代码", "名称", "最新价", "今开", "最高", "最低", "涨跌幅", "涨跌额", "成交量", "昨收"]]
-                    quote = stock_quotes[stock_quotes["代码"] == symbol]
+            stock_quotes = load_cached_data(market)
+            quote = stock_quotes[stock_quotes["代码"] == symbol]
 
             if quote.empty:
                 return pd.DataFrame([{"symbol": symbol, "error": "Symbol not found"}])
@@ -84,7 +82,7 @@ class AKShareEquityQuoteFetcher(
 
         for symbol in symbols:
             try:        
-                data = get_one(symbol, stock_zh_a_spot_em_df, stock_hk_spot_em_df)
+                data = get_one(symbol)
                 all_data.append(data.to_dict(orient="records")[0])
                 
             except Exception as e:
