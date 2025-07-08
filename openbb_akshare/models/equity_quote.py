@@ -68,12 +68,12 @@ class AKShareEquityQuoteFetcher(
         symbols = query.symbol.split(",")
         all_data = []
 
-        def get_one(symbol) -> pd.DataFrame:
+        def get_one(symbol, use_cache) -> pd.DataFrame:
             """Get the data for one ticker symbol."""
             from openbb_akshare.utils.fetch_quote import load_cached_data
             quote = pd.DataFrame()
             symbol_b, symbol_f, market = normalize_symbol(symbol)
-            stock_quotes = load_cached_data(market)
+            stock_quotes = load_cached_data(market, use_cache)
             quote = stock_quotes[stock_quotes["代码"] == symbol]
 
             if quote.empty:
@@ -82,7 +82,7 @@ class AKShareEquityQuoteFetcher(
 
         for symbol in symbols:
             try:        
-                data = get_one(symbol)
+                data = get_one(symbol, query.use_cache)
                 all_data.append(data.to_dict(orient="records")[0])
                 
             except Exception as e:
