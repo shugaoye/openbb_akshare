@@ -41,6 +41,10 @@ class AKShareEquityHistoricalQueryParams(EquityHistoricalQueryParams):
         default="daily", description=QUERY_DESCRIPTIONS.get("period", "")
     )
 
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to use a cached request. The quote is cached for one hour.",
+    )
 
 class AKShareEquityHistoricalData(EquityHistoricalData):
     """AKShare Equity Historical Price Data."""
@@ -98,12 +102,13 @@ class AKShareEquityHistoricalFetcher(
         """Return the raw data from the AKShare endpoint."""
         from openbb_akshare.utils.helpers import ak_download
 
-        data = ak_download(symbol=query.symbol, start_date=query.start_date, end_date=query.end_date, period="daily", adjust="")
+        data = ak_download(symbol=query.symbol, start_date=query.start_date, end_date=query.end_date, 
+                           period="daily", use_cache=query.use_cache, adjust="")
 
         if data.empty:
             raise EmptyDataError()
 
-        return data
+        return data.to_dict(orient="records")
 
 
     @staticmethod

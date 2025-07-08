@@ -22,6 +22,7 @@ def ak_download(  # pylint: disable=too-many-positional-arguments
     end_date: Optional[Union[str, "date"]] = None,
     interval: INTERVALS = "1d",
     period: Optional[PERIODS] = None,
+    use_cache: Optional[bool] = True,
     **kwargs: Any,
 ) -> DataFrame:
     import akshare as ak
@@ -31,17 +32,15 @@ def ak_download(  # pylint: disable=too-many-positional-arguments
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
     if market == "HK":
-        stock_zh_a_hist_df = ak.stock_hk_hist(symbol_b, period, start, end, adjust="")
+        hist_df = ak.stock_hk_hist(symbol_b, period, start, end, adjust="")
     else:
-        stock_zh_a_hist_df = ak.stock_zh_a_hist(symbol_b, period, start, end, adjust="")
+        hist_df = ak.stock_zh_a_hist(symbol_b, period, start, end, adjust="")
     
-    stock_zh_a_hist_df.rename(columns={"日期": "date", "股票代码": "symbol", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
-    stock_zh_a_hist_df = stock_zh_a_hist_df.drop(columns=["振幅"])
-    stock_zh_a_hist_df = stock_zh_a_hist_df.drop(columns=["换手率"])
-    return stock_zh_a_hist_df
+    hist_df.rename(columns={"日期": "date", "股票代码": "symbol", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
+    hist_df = hist_df.drop(columns=["振幅"])
+    hist_df = hist_df.drop(columns=["换手率"])
+    return hist_df
 
-
-import re
 
 def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     """
@@ -59,6 +58,8 @@ def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     Returns:
         float: Post-tax dividend amount per share, rounded to 4 decimal places
     """
+    import re
+
     # Case 1: Non-dividend cases
     if re.search(r'不分红|不分配不转增|转增.*不分配', dividend_str):
         return 0.0
