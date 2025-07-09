@@ -8,9 +8,10 @@ readme = "README.md"
 packages = [{ include = "openbb_akshare" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-akshare = "1.16.98"
+python = ">=3.9.21,<3.13"
+akshare = "1.17.18"
 openbb-core = { version = "^1.4.7" }
+ipywidgets = "^8.1.7"
 
 [tool.poetry.group.dev.dependencies]
 openbb-devtools = { version = "^1.0.0" }
