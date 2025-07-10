@@ -7,12 +7,16 @@ from datetime import date
 class EquityCache:
     # Extract table schema into a class variable for dynamic modification
 
-    def __init__(self, db_path: str, table_schema: Dict,table_name: str = "equity_info", primary_key: str = "symbol"):
-        self.db_path = db_path
+    def __init__(self, table_schema: Dict, db_path: Optional[str] = None, table_name: str = "equity_info", primary_key: str = "symbol"):
         self.table_name = table_name
         self.conn = None
         self.table_schema = table_schema
         self.primary_key = primary_key
+        if db_path is None:
+            from openbb_akshare.utils import get_cache_path
+            self.db_path = get_cache_path()
+        else:
+            self.db_path = db_path
         self._ensure_db_exists()
 
     def _ensure_db_exists(self):
@@ -31,8 +35,16 @@ class EquityCache:
 
     def connect(self):
         """Establish a connection to the SQLite database."""
-        if self.conn is None:
-            self.conn = sqlite3.connect(self.db_path)
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            # Dynamically generate CREATE TABLE statement using TABLE_SCHEMA
+            columns_definition = ", ".join([f"{col} {dtype}" for col, dtype in self.table_schema.items()])
+            cursor.execute(f'''
+                CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    {columns_definition}
+                )
+            ''')
+            conn.commit()
 
     def close(self):
         """Close the database connection."""
@@ -45,6 +57,7 @@ class EquityCache:
         Write DataFrame to the SQLite database.
         Assumes the DataFrame has columns matching the table structure.
         """
+        self.connect()
         with sqlite3.connect(self.db_path) as conn:
             df.to_sql(self.table_name, conn, if_exists='replace', index=False)
 

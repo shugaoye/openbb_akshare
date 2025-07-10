@@ -54,13 +54,13 @@ def test_db_path(tmp_path):
 @pytest.fixture
 def equity_cache(test_db_path):
     print(test_db_path)
-    cache = EquityCache(test_db_path, TABLE_SCHEMA)
+    cache = EquityCache(TABLE_SCHEMA, test_db_path)
     yield cache
     if Path(test_db_path).exists():
         Path(test_db_path).unlink()
 
 def test_db_creation(test_db_path):
-    cache = EquityCache(test_db_path, TABLE_SCHEMA)
+    cache = EquityCache(TABLE_SCHEMA, test_db_path)
     assert Path(test_db_path).exists()
 
 def test_write_and_read_dataframe(sample_equity_info_df, equity_cache):
