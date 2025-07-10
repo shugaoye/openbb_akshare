@@ -9,6 +9,7 @@ from openbb_akshare.models.currency_historical import AKShareCurrencyHistoricalF
 from openbb_akshare.models.currency_snapshots import AKShareCurrencySnapshotsFetcher
 from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
+from openbb_akshare.models.equity_profile import AKShareEquityProfileFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
 from openbb_akshare.models.income_statement import AKShareIncomeStatementFetcher
 
@@ -32,6 +33,7 @@ provider = Provider(
         "CurrencySnapshots": AKShareCurrencySnapshotsFetcher,
         "EquityQuote": AKShareEquityQuoteFetcher,
         "EquityHistorical": AKShareEquityHistoricalFetcher,
+        "EquityInfo": AKShareEquityProfileFetcher,
         "HistoricalDividends": AKShareHistoricalDividendsFetcher,
         "IncomeStatement": AKShareIncomeStatementFetcher,
     }

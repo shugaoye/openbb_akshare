@@ -11,6 +11,7 @@ from openbb_core.provider.standard_models.equity_info import (
     EquityInfoQueryParams,
 )
 from pydantic import Field, field_validator
+import pandas as pd
 
 
 class AKShareEquityProfileQueryParams(EquityInfoQueryParams):
@@ -42,11 +43,6 @@ class AKShareEquityProfileData(EquityInfoData):
         "sector": "affiliate_industry",
         "industry_category": "operating_scope",
         "first_stock_price_date": "listed_date",
-        "org_name_cn": "comcnname",
-        "org_id": "comunic",
-        "established_date": "incdate",
-        "actual_issue_vol": "numtissh",
-        "issue_price": "ispr",
     }
 
     org_name_cn: Optional[str] = Field(
@@ -85,6 +81,25 @@ class AKShareEquityProfileData(EquityInfoData):
         description="The currency in which the asset is traded.", default=None
     )
 
+    @field_validator("employees", mode="before", check_fields=False)
+    @classmethod
+    def to_lower(cls, v: Optional[int]) -> Optional[int]:
+        """Return 0 if it is nan."""
+        if v is None or v == "" or pd.isna(v):
+            return 0
+        else:
+            return int(v)
+
+    @field_validator("established_date", mode="before", check_fields=False)
+    @classmethod
+    def validate_established_date(cls, v):
+        """Validate first stock price date."""
+        # pylint: disable=import-outside-toplevel
+        from datetime import timezone  # noqa
+        from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
+
+        return safe_fromtimestamp(v/1000, tz=timezone.utc).date() if v else None
+
     @field_validator("first_stock_price_date", mode="before", check_fields=False)
     @classmethod
     def validate_first_trade_date(cls, v):
@@ -93,7 +108,7 @@ class AKShareEquityProfileData(EquityInfoData):
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
 
-        return safe_fromtimestamp(v, tz=timezone.utc).date() if v else None
+        return safe_fromtimestamp(v/1000, tz=timezone.utc).date() if v else None
 
 
 class AKShareEquityProfileFetcher(
@@ -117,26 +132,24 @@ class AKShareEquityProfileFetcher(
         import asyncio  # noqa
         from openbb_core.app.model.abstract.error import OpenBBError
         from openbb_core.provider.utils.errors import EmptyDataError
-        from openbb_core.provider.utils.helpers import get_requests_session
         from warnings import warn
 
         symbols = query.symbol.split(",")
         results = []
+        messages: list = []
 
         async def get_one(symbol):
+            from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
             """Get the data for one ticker symbol."""
-            result: dict = {}
-            ticker: dict = {}
-            if ticker:
-                for field in fields:
-                    if field in ticker:
-                        result[
-                            field.replace("dividendYield", "dividend_yield").replace(
-                                "issueType", "issue_type"
-                            )
-                        ] = ticker.get(field, None)
+            try:
+                result: dict = {}
+                result = fetch_equity_info(symbol).to_dict(orient="records")[0]
                 if result:
                     results.append(result)
+            except Exception as e:
+                messages.append(
+                    f"Error getting data for {symbol} -> {e.__class__.__name__}: {e}"
+                )
 
         tasks = [get_one(symbol) for symbol in symbols]
 

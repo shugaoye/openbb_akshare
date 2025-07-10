@@ -69,18 +69,25 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
             row["reg_address_cn"] = hk_data["rgiofc"].iloc[0]
             row["office_address_cn"] = hk_data["hofclctmbu"].iloc[0]
             row["telephone"] = hk_data["tel"].iloc[0]
+            row["postcode"] = ""
+            row["provincial_name"] = ""
+            row["staff_num"] = 0
+            row["affiliate_industry"] = ""
             row["operating_scope"] = hk_data["refccomty"].iloc[0]
             row["listed_date"] = hk_data["lsdateipo"].iloc[0]
             row["org_name_cn"] = hk_data["comcnname"].iloc[0]
+            row["org_short_name_cn"] = ""
+            row["org_short_name_en"] = ""
             row["org_id"] = hk_data["comunic"].iloc[0]
             row["established_date"] = hk_data["incdate"].iloc[0]
             row["actual_issue_vol"] = hk_data["numtissh"].iloc[0]
+            row["reg_asset"] = 0.0
             row["issue_price"] = hk_data["ispr"].iloc[0]
             row["currency"] = "HKD"
             equity_info.loc[len(equity_info)] = row
             cache.update_or_insert(equity_info)
         else:
-            stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(symbol=f"SH{symbol_b}")
+            stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(symbol=f"{market}{symbol_b}")
             keys = list(TABLE_SCHEMA.keys())
             equity_info=stock_individual_basic_info_xq_df.set_index("item").T[keys[1:]]
 
@@ -93,4 +100,7 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
 
     data = cache.read_dataframe()
     result = data[data["symbol"] == symbol_f]
+    result["listed_date"] = pd.to_datetime(result["listed_date"], unit='ms')
+    result["established_date"] = pd.to_datetime(result["established_date"], unit='ms')
+
     return result
