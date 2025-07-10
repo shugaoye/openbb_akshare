@@ -4,9 +4,38 @@ from pathlib import Path
 import pandas as pd
 from datetime import date
 
-class EquityInfoCache:
-    def __init__(self, db_path: str):
+class EquityCache:
+    # Extract table schema into a class variable for dynamic modification
+    TABLE_SCHEMA = {
+        "symbol": "TEXT PRIMARY KEY",
+        "org_name_en": "TEXT",
+        "main_operation_business": "TEXT",
+        "org_cn_introduction": "TEXT",
+        "chairman": "TEXT",
+        "org_website": "TEXT",
+        "reg_address_cn": "TEXT",
+        "office_address_cn": "TEXT",
+        "telephone": "TEXT",
+        "postcode": "TEXT",
+        "provincial_name": "TEXT",
+        "staff_num": "INTEGER",
+        "affiliate_industry": "TEXT",
+        "operating_scope": "TEXT",
+        "listed_date": "DATE",
+        "org_name_cn": "TEXT",
+        "org_short_name_cn": "TEXT",
+        "org_short_name_en": "TEXT",
+        "org_id": "TEXT",
+        "established_date": "DATE",
+        "actual_issue_vol": "INTEGER",
+        "reg_asset": "REAL",
+        "issue_price": "REAL",
+        "currency": "TEXT"
+    }
+
+    def __init__(self, db_path: str, table_name: str = "equity_info"):
         self.db_path = db_path
+        self.table_name = table_name  # New table_name attribute
         self.conn = None
         self._ensure_db_exists()
 
@@ -15,32 +44,11 @@ class EquityInfoCache:
         if not Path(self.db_path).exists():
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS equity_info (
-                        symbol TEXT PRIMARY KEY,
-                        org_name_en TEXT,
-                        main_operation_business TEXT,
-                        org_cn_introduction TEXT,
-                        chairman TEXT,
-                        org_website TEXT,
-                        reg_address_cn TEXT,
-                        office_address_cn TEXT,
-                        telephone TEXT,
-                        postcode TEXT,
-                        provincial_name TEXT,
-                        staff_num INTEGER,
-                        affiliate_industry TEXT,
-                        operating_scope TEXT,
-                        listed_date DATE,
-                        org_name_cn TEXT,
-                        org_short_name_cn TEXT,
-                        org_short_name_en TEXT,
-                        org_id TEXT,
-                        established_date DATE,
-                        actual_issue_vol INTEGER,
-                        reg_asset REAL,
-                        issue_price REAL,
-                        currency TEXT
+                # Dynamically generate CREATE TABLE statement using TABLE_SCHEMA
+                columns_definition = ", ".join([f"{col} {dtype}" for col, dtype in self.TABLE_SCHEMA.items()])
+                cursor.execute(f'''
+                    CREATE TABLE IF NOT EXISTS {self.table_name} (
+                        {columns_definition}
                     )
                 ''')
                 conn.commit()
@@ -62,14 +70,14 @@ class EquityInfoCache:
         Assumes the DataFrame has columns matching the table structure.
         """
         with sqlite3.connect(self.db_path) as conn:
-            df.to_sql('equity_info', conn, if_exists='replace', index=False)
+            df.to_sql(self.table_name, conn, if_exists='replace', index=False)
 
     def read_dataframe(self) -> pd.DataFrame:
         """
         Read data from the SQLite database and return as a DataFrame.
         """
         with sqlite3.connect(self.db_path) as conn:
-            query = "SELECT * FROM equity_info"
+            query = f"SELECT * FROM {self.table_name}"
             df = pd.read_sql_query(query, conn)
         return df
 
@@ -81,12 +89,12 @@ class EquityInfoCache:
             for _, row in df.iterrows():
                 symbol = row['symbol']
                 # Remove existing row with the same symbol
-                conn.execute("DELETE FROM equity_info WHERE symbol = ?", (symbol,))
+                conn.execute(f"DELETE FROM {self.table_name} WHERE symbol = ?", (symbol,))
                 # Insert new row
                 columns = list(row.index)
                 values = list(row.values)
                 query = f'''
-                    INSERT INTO equity_info ({', '.join(columns)})
+                    INSERT INTO {self.table_name} ({', '.join(columns)})
                     VALUES ({', '.join(['?']*len(columns))})
                 '''
                 conn.execute(query, values)

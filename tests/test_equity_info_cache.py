@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import sqlite3
 from pathlib import Path
-from openbb_akshare.utils.equity_info_cache import EquityInfoCache
+from openbb_akshare.utils.equity_cache import EquityCache
 from datetime import datetime, timezone
 
 @pytest.fixture
@@ -53,13 +53,13 @@ def test_db_path(tmp_path):
 @pytest.fixture
 def equity_cache(test_db_path):
     print(test_db_path)
-    cache = EquityInfoCache(test_db_path)
+    cache = EquityCache(test_db_path)
     yield cache
     if Path(test_db_path).exists():
         Path(test_db_path).unlink()
 
 def test_db_creation(test_db_path):
-    cache = EquityInfoCache(test_db_path)
+    cache = EquityCache(test_db_path)
     assert Path(test_db_path).exists()
 
 def test_write_and_read_dataframe(sample_equity_info_df, equity_cache):
@@ -90,7 +90,6 @@ def test_update_or_insert(sample_equity_info_df, equity_cache):
     equity_cache.update_or_insert(update_data)
 
     result = equity_cache.read_dataframe()
-    print(result)
     assert result.loc[0, 'org_name_en'] == 'UpdatedCompany1'
 
 def test_connection_management(equity_cache):
