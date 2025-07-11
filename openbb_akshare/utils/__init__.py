@@ -1,4 +1,5 @@
 """AKShare utils directory."""
+import os
 from openbb_core.app.utils import get_user_cache_directory
 
 def get_cache_path() -> str:
@@ -8,5 +9,9 @@ def get_cache_path() -> str:
     Returns:
         str: The path to the AKShare cache database.
     """
+    db_dir = f"{get_user_cache_directory()}/akshare"
+    db_path = f"{db_dir}/equity.db"
 
-    return f"{get_user_cache_directory()}/akshare/equity.db"
+    os.makedirs(db_dir, exist_ok=True)
+
+    return db_path

@@ -9,10 +9,9 @@ from openbb_core.app.utils import get_user_cache_directory
 CACHE_TTL = 60*60  # 60 seconds
 logger = logging.getLogger(__name__)
 def get_connection():
-    db_dir = f"{get_user_cache_directory()}/akshare"
-    db_path = f"{db_dir}/equity.db"
+    from openbb_akshare.utils import get_cache_path
+    db_path = get_cache_path()
 
-    os.makedirs(db_dir, exist_ok=True)
     return sqlite3.connect(db_path)
 
 def init_cache_table():

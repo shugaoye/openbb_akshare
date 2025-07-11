@@ -21,20 +21,7 @@ class EquityCache:
 
     def _ensure_db_exists(self):
         """Ensure the SQLite database and table exist."""
-        if not Path(self.db_path).exists():
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                # Dynamically generate CREATE TABLE statement using TABLE_SCHEMA
-                columns_definition = ", ".join([f"{col} {dtype}" for col, dtype in self.table_schema.items()])
-                cursor.execute(f'''
-                    CREATE TABLE IF NOT EXISTS {self.table_name} (
-                        {columns_definition}
-                    )
-                ''')
-                conn.commit()
-
-    def connect(self):
-        """Establish a connection to the SQLite database."""
+        #if not Path(self.db_path).exists():
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             # Dynamically generate CREATE TABLE statement using TABLE_SCHEMA
@@ -45,6 +32,11 @@ class EquityCache:
                 )
             ''')
             conn.commit()
+
+    def connect(self):
+        """Establish a connection to the SQLite database."""
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
 
     def close(self):
         """Close the database connection."""
@@ -57,7 +49,6 @@ class EquityCache:
         Write DataFrame to the SQLite database.
         Assumes the DataFrame has columns matching the table structure.
         """
-        self.connect()
         with sqlite3.connect(self.db_path) as conn:
             df.to_sql(self.table_name, conn, if_exists='replace', index=False)
 

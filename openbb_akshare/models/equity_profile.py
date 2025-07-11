@@ -81,9 +81,18 @@ class AKShareEquityProfileData(EquityInfoData):
         description="The currency in which the asset is traded.", default=None
     )
 
+    @field_validator("actual_issue_vol", mode="before", check_fields=False)
+    @classmethod
+    def validate_actual_issue_vol(cls, v: Optional[int]) -> Optional[int]:
+        """Return 0 if it is nan."""
+        if v is None or v == "" or pd.isna(v):
+            return 0
+        else:
+            return int(v)
+
     @field_validator("employees", mode="before", check_fields=False)
     @classmethod
-    def to_lower(cls, v: Optional[int]) -> Optional[int]:
+    def validate_employees(cls, v: Optional[int]) -> Optional[int]:
         """Return 0 if it is nan."""
         if v is None or v == "" or pd.isna(v):
             return 0
