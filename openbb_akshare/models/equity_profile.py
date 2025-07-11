@@ -12,6 +12,7 @@ from openbb_core.provider.standard_models.equity_info import (
 )
 from pydantic import Field, field_validator
 import pandas as pd
+from openbb_akshare.utils.tools import get_timestamp
 
 
 class AKShareEquityProfileQueryParams(EquityInfoQueryParams):
@@ -107,7 +108,7 @@ class AKShareEquityProfileData(EquityInfoData):
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
 
-        return safe_fromtimestamp(v/1000, tz=timezone.utc).date() if v else None
+        return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
     @field_validator("first_stock_price_date", mode="before", check_fields=False)
     @classmethod
@@ -117,7 +118,7 @@ class AKShareEquityProfileData(EquityInfoData):
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
 
-        return safe_fromtimestamp(v/1000, tz=timezone.utc).date() if v else None
+        return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
 
 class AKShareEquityProfileFetcher(
