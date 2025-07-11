@@ -147,6 +147,8 @@ def get_timestamp(v: int) -> int:
         if isinstance(v, str):
             dt = datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
             v = int(dt.timestamp())
+        if isinstance(v, datetime):
+            v = int(v.timestamp())
         v = int(v)
     except (TypeError, ValueError):
         raise ValueError("Invalid timestamp format")

@@ -37,3 +37,8 @@ def test_get_timestamp_seconds():
 def test_get_timestamp_now():
     now = int(time.time())
     assert get_timestamp(now) == now
+
+def test_get_timestamp_datetime():
+    from datetime import datetime
+    dt = datetime.strptime("2025-07-01 10:02:01", "%Y-%m-%d %H:%M:%S")
+    assert get_timestamp(dt) == 1751335321
