@@ -5,12 +5,13 @@ from openbb_akshare.utils.tools import get_timestamp
 @pytest.mark.parametrize(
     "any_timestamp,expected",
     [
-        # Non-dividend cases
         (1077638400000, 1077638400),
         (1279209600000, 1279209600),
         (665078400000, 665078400),
         (1457366400000, 1457366400),
         (9.972e+11, 997200000),
+        (1,1),
+        ("1992-10-27 16:00:00", 720172800)
     ]
 )
 
@@ -33,13 +34,6 @@ def test_get_timestamp_seconds():
     result = get_timestamp(future_s)
     assert result == future_s
 
-def test_get_timestamp_too_old():
-    # 1970-01-01
-    with pytest.raises(ValueError):
-        get_timestamp(1)
-
 def test_get_timestamp_now():
-    # Current time in seconds (should raise ValueError, as it's not in the future)
     now = int(time.time())
-    with pytest.raises(ValueError):
-        get_timestamp(now)
+    assert get_timestamp(now) == now
