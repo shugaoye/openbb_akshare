@@ -1,6 +1,7 @@
 # Add these imports at the top
-from datetime import datetime, timedelta
 import os
+import time
+from datetime import datetime, timedelta, timezone
 
 # support logging
 import logging
@@ -86,6 +87,8 @@ def normalize_symbol(symbol: str) -> tuple[str, str, str]:
         >>> normalize_symbol("00700")
         ("00700", "00700.HK", "HK")
     """
+    symbol = symbol.strip()  # Remove leading/trailing whitespace
+    
     # If symbol already contains market suffix
     if "." in symbol:
         base, market = symbol.split(".")
@@ -133,6 +136,33 @@ def normalize_date(date: str) -> str:
     except ValueError:
         # If parsing fails, return the original string
         return date
+
+def get_timestamp(v: int) -> int:
+    """Valid input and return a timestamp in seconds."""
+    if v is None:
+        return None
+
+    # 尝试转换为整数
+    try:
+        if isinstance(v, str):
+            dt = datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            v = int(dt.timestamp())
+        if isinstance(v, datetime):
+            v = int(v.timestamp())
+        v = int(v)
+    except (TypeError, ValueError):
+        raise ValueError("Invalid timestamp format")
+
+    # 判断时间戳单位
+    if v > 2_534_023_008_000:  # 远大于 2100 年的毫秒时间戳
+        raise ValueError("Timestamp value too large")
+    elif v > 2_534_023_008:     # 大于 2100 年的秒时间戳
+        return v // 1000         # 假设是毫秒
+    elif v >= 0:                # 合法的 Unix 时间戳（秒）
+        return v
+    else:
+        raise ValueError("Timestamp is before the Unix epoch (1970-01-01)")
+
 
 # 示例调用
 if __name__ == "__main__":
