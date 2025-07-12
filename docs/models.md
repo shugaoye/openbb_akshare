@@ -1,4 +1,3 @@
-
 ## OpenBB Models Supported
 
 Please refer to the following table. AKShare only supports part of the Hong Kong stock data.
@@ -12,6 +11,25 @@ Please refer to the following table. AKShare only supports part of the Hong Kong
 | AKShareEquityQuoteData         | x   | x   |
 | AKShareHistoricalDividendsData | x   | x   |
 
+## EquityHistorical
+
+To use cache, see the following steps of process.
+
+1.  Get the start_date using `fetch_equity_info`
+
+   equity_info =fetch_equity_info(symbol)
+
+   start_date = equity_info["listed_date"].iloc[0].strftime('%Y-%m-%d')
+
+   Set the end_date to now
+
+2.  Retrieve all data until today and save to database
+   
+
+   Using {market}{symbol} as the table name and `date` as primary key
+
+3.  Retrieve data from the database using start_date and end_date from the query
+
 ## FMP
 
 ### IncomeStatementData
@@ -22,9 +40,7 @@ Please refer to the following table. AKShare only supports part of the Hong Kong
 
 FMP's Income Statement API provides access to real-time income statement data for a wide range of companies, including public companies, private companies, and ETFs. This data can be used to track a company's profitability over time, to compare a company to its competitors, and to identify trends in a company's business.
 
-
 https://financialmodelingprep.com/api/v3/income-statement/AAPL?period=annual&apikey=
-
 
 #### Income Statements
 
@@ -258,4 +274,3 @@ https://financialmodelingprep.com/api/v3/balance-sheet-statement/0000320193?peri
 	}
 ]
 ```
-

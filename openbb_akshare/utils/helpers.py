@@ -9,6 +9,7 @@ from openbb_yfinance.utils.references import INTERVALS, MONTHS, PERIODS
 from pandas import DataFrame
 from datetime import datetime, timedelta
 from .tools import normalize_date, normalize_symbol
+import akshare as ak
 
 import logging
 from openbb_akshare.utils.tools import setup_logger, normalize_symbol
@@ -16,30 +17,58 @@ from openbb_akshare.utils.tools import setup_logger, normalize_symbol
 #setup_logger()
 logger = logging.getLogger(__name__)
 
-def ak_download(  # pylint: disable=too-many-positional-arguments
-    symbol: str,
-    start_date: Optional[Union[str, "date"]] = None,
-    end_date: Optional[Union[str, "date"]] = None,
-    interval: INTERVALS = "1d",
-    period: Optional[PERIODS] = None,
-    use_cache: Optional[bool] = True,
-    **kwargs: Any,
-) -> DataFrame:
-    import akshare as ak
+EQUITY_HISTORY_SCHEMA = {
+    "date": "TEXT PRIMARY KEY",
+    "open": "REAL",
+    "high": "REAL",
+    "low": "REAL",
+    "close": "REAL",
+    "volume": "REAL",
+    "vwap": "REAL",
+    "change": "REAL",
+    "change_percent": "REAL",
+    "amount": "REAL"
+}
 
-    start = start_date.strftime("%Y%m%d")
-    end = end_date.strftime("%Y%m%d")
+def ak_download_without_cache(
+        symbol: str,
+        start_date: str,
+        end_date: str,
+        period: str = "daily",
+        adjust: str = "",
+    ) -> DataFrame:
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
     if market == "HK":
-        hist_df = ak.stock_hk_hist(symbol_b, period, start, end, adjust="")
+        hist_df = ak.stock_hk_hist(symbol_b, period, start_date, end_date, adjust="")
+        hist_df.rename(columns={"时间": "date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
+        hist_df = hist_df.drop(columns=["振幅"])
+        hist_df = hist_df.drop(columns=["换手率"])
     else:
-        hist_df = ak.stock_zh_a_hist(symbol_b, period, start, end, adjust="")
+        hist_df = ak.stock_zh_a_hist(symbol_b, period, start_date, end_date, adjust="")
     
-    hist_df.rename(columns={"日期": "date", "股票代码": "symbol", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
-    hist_df = hist_df.drop(columns=["振幅"])
-    hist_df = hist_df.drop(columns=["换手率"])
+        hist_df.rename(columns={"日期": "date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
+        hist_df = hist_df.drop(columns=["股票代码"])
+        hist_df = hist_df.drop(columns=["振幅"])
+        hist_df = hist_df.drop(columns=["换手率"])
+
     return hist_df
+
+
+def ak_download(
+        symbol: str,
+        start_date: str,
+        end_date: str,
+        period: str = "daily",
+        use_cache: Optional[bool] = True,
+        adjust: str = "",
+    ) -> DataFrame:
+
+    start = start_date.strftime("%Y%m%d")
+    end = end_date.strftime("%Y%m%d")
+    result = ak_download_without_cache(symbol, start, end, period, adjust)
+
+    return result
 
 
 def get_post_tax_dividend_per_share(dividend_str: str) -> float:

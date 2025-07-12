@@ -60,6 +60,10 @@ class AKShareEquityHistoricalData(EquityHistoricalData):
         "change_percent": "涨跌幅",
     }
 
+    amount: Optional[float] = Field(
+        default=None,
+        description="Amount.",
+    )
     change: Optional[float] = Field(
         default=None,
         description="Change in the price from the previous close.",
@@ -119,5 +123,5 @@ class AKShareEquityHistoricalFetcher(
 
         return [
             AKShareEquityHistoricalData.model_validate(d)
-            for d in data.to_dict("records")
+            for d in data
         ]
