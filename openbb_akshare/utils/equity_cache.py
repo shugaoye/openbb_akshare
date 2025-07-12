@@ -79,3 +79,16 @@ class EquityCache:
                 '''
                 conn.execute(query, values)
             conn.commit()
+
+    def fetch_date_range(self, start_date: str, end_date: str) -> pd.DataFrame:
+        """按日期范围获取数据"""
+        
+        query = f"""
+        SELECT * FROM {self.table_name} 
+        WHERE date BETWEEN ? AND ?
+        ORDER BY date ASC
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            df = pd.read_sql(query, conn, params=(start_date, end_date))
+            df['date'] = pd.to_datetime(df['date'])
+            return df
