@@ -42,7 +42,7 @@ class AKShareIncomeStatementData(IncomeStatementData):
         "fiscal_period": "REPORT_TYPE",
         "reported_currency": "CURRENCY",
         "cost_of_revenue": "TOTAL_OPERATE_COST",
-        "total_operating_income": "TOTAL_OPERATE_INCOME",
+        "operate_income": "OPERATE_INCOME",
         "total_pre_tax_income": "TOTAL_PROFIT",
         "income_tax_expense": "INCOME_TAX",
         "consolidated_net_income": "NETPROFIT",
@@ -58,7 +58,7 @@ class AKShareIncomeStatementData(IncomeStatementData):
         default=None,
         description="Cost of revenue.",
     )
-    total_operating_income: Optional[float] = Field(
+    operate_income: Optional[float] = Field(
         default=None,
         description="Total operating income.",
     )
@@ -120,7 +120,7 @@ class AKShareIncomeStatementFetcher(
         symbol_b, symbol_f, market = normalize_symbol(query.symbol)
         symbol_em = f"SH{symbol_b}"
         stock_profit_sheet_by_yearly_em_df = ak.stock_profit_sheet_by_yearly_em(symbol=symbol_em)
-        income_statement_em = stock_profit_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "CURRENCY", "TOTAL_OPERATE_COST", "TOTAL_OPERATE_INCOME", "TOTAL_PROFIT", "INCOME_TAX", "NETPROFIT", "BASIC_EPS", "DILUTED_EPS"]]
+        income_statement_em = stock_profit_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "CURRENCY", "TOTAL_OPERATE_COST", "OPERATE_INCOME", "TOTAL_PROFIT", "INCOME_TAX", "NETPROFIT", "BASIC_EPS", "DILUTED_EPS"]]
 
         return income_statement_em.to_dict(orient="records")
 
