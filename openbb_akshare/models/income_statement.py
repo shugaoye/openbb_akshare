@@ -1,6 +1,7 @@
 """AKShare Income Statement Model."""
 
 # pylint: disable=unused-argument
+import pandas as pd
 from datetime import (
     date as dateType,
     datetime,
@@ -31,6 +32,10 @@ class AKShareIncomeStatementQueryParams(IncomeStatementQueryParams):
     period: Literal["annual", "quarter"] = Field(
         default="annual",
         description=QUERY_DESCRIPTIONS.get("period", ""),
+    )
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to use a cached request. The quote is cached for one hour.",
     )
 
 
@@ -98,21 +103,16 @@ class AKShareIncomeStatementFetcher(
         return AKShareIncomeStatementQueryParams(**params)
 
     @staticmethod
-    async def aextract_data(
+    async def extract_data(
         query: AKShareIncomeStatementQueryParams,
         credentials: Optional[Dict[str, str]],
         **kwargs: Any,
     ) -> List[Dict]:
         """Return the raw data from the AKShare endpoint."""
-        import akshare as ak
-        from openbb_akshare.utils.tools import normalize_symbol
 
-        symbol_b, symbol_f, market = normalize_symbol(query.symbol)
-        symbol_em = f"SH{symbol_b}"
-        stock_profit_sheet_by_yearly_em_df = ak.stock_profit_sheet_by_yearly_em(symbol=symbol_em)
-        #income_statement_em = stock_profit_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "CURRENCY", "TOTAL_OPERATE_COST", "OPERATE_INCOME", "TOTAL_PROFIT", "INCOME_TAX", "NETPROFIT", "BASIC_EPS", "DILUTED_EPS"]]
+        em_df = get_data(query.symbol, query.period, query.use_cache)
 
-        return stock_profit_sheet_by_yearly_em_df.to_dict(orient="records")
+        return em_df.to_dict(orient="records")
 
     @staticmethod
     def transform_data(
@@ -123,3 +123,24 @@ class AKShareIncomeStatementFetcher(
             result.pop("symbol", None)
             result.pop("cik", None)
         return [AKShareIncomeStatementData.model_validate(d) for d in data]
+
+def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
+    if use_cache:
+        from openbb_akshare.utils.blob_cache import BlobCache
+        cache = BlobCache(table_name="income_statement")
+        return cache.load_cached_data(symbol, period, get_income_statement)
+    else:
+        return get_income_statement(symbol, period)
+
+def get_income_statement(symbol: str, period: str = "annual") -> pd.DataFrame:
+    import akshare as ak
+    from openbb_akshare.utils.helpers import normalize_symbol
+    symbol_b, symbol_f, market = normalize_symbol(symbol)
+    symbol_em = f"{market}{symbol_b}"
+
+    if period == "annual":
+        return ak.stock_profit_sheet_by_yearly_em(symbol=symbol_em)
+    elif period == "quarter":
+        return ak.stock_profit_sheet_by_report_em(symbol=symbol_em)
+    else:
+        raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")
