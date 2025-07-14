@@ -11,6 +11,24 @@ Please refer to the following table. AKShare only supports part of the Hong Kong
 | AKShareEquityQuoteData         | x   | x   |
 | AKShareHistoricalDividendsData | x   | x   |
 
+## BlobCache
+
+```
+CREATE TABLE IF NOT EXISTS {self.table_name} (
+	key TEXT PRIMARY KEY,
+	timestamp REAL,
+	type TEXT,
+	data BLOB
+)
+```
+
+To cache income_statement, balance_sheet and cash_flow, the table_name and fields can be defined as:
+
+- `table_name`: income_statement, balance_sheet and cash_flow
+- `key`: {market}{symbol}{type}, such as `SH600325_annual` or `SH600325_quarter`
+- `type`: "annual", "quarter"
+- `timestamp`: the date of cache created, it is the TTL to compute when to fetch data again.
+
 ## EquityHistorical
 
 To use cache, see the following steps of process.
