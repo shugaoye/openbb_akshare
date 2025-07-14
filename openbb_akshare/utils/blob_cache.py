@@ -88,19 +88,19 @@ class BlobCache:
                 if report_type == "annual":
                     expired_date = calculate_cache_ttl(get_next_year_start, now=stored_date)
                     if now < expired_date.timestamp():
-                        logger.info("Loading from SQLite cache...")
+                        logger.info("Loading annual data from SQLite cache...")
                         return pickle.loads(data_blob)
                 elif report_type == "quarter":
                     expired_date = calculate_cache_ttl(get_next_quarter_start, now=stored_date)
                     if now < expired_date.timestamp():
-                        logger.info("Loading from SQLite cache...")
+                        logger.info("Loading quarter data from SQLite cache...")
                         return pickle.loads(data_blob)
                 else:
                     if now - timestamp < CACHE_TTL:
-                        logger.info("Loading from SQLite cache...")
+                        logger.info("Loading data from SQLite cache...")
                         return pickle.loads(data_blob)
 
-            logger.info("Generating new data...")
+            logger.info(f"Generating new {report_type} data...")
             df = get_data(symbol, report_type)
 
             # 序列化 DataFrame
