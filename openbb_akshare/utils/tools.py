@@ -6,11 +6,12 @@ from datetime import datetime, timedelta, timezone
 # support logging
 import logging
 from logging.handlers import RotatingFileHandler
+from openbb_core.app.utils import get_user_cache_directory
 
 # Configure logging
 def setup_logger():
     # Create logs directory if it doesn't exist
-    log_dir = "logs"
+    log_dir = f"{get_user_cache_directory()}/akshare/logs"
     log_file = os.path.join(log_dir, "openbb_akshare.log")
     os.makedirs(log_dir, exist_ok=True)
 

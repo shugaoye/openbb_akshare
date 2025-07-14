@@ -1,7 +1,7 @@
 """AKShare Balance Sheet Model."""
 
 # pylint: disable=unused-argument
-
+import pandas as pd
 from datetime import datetime
 from typing import Any, Literal, Optional
 
@@ -35,6 +35,10 @@ class AKShareBalanceSheetQueryParams(BalanceSheetQueryParams):
         description=QUERY_DESCRIPTIONS.get("limit", ""),
         le=5,
     )
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to use a cached request. The quote is cached for one hour.",
+    )
 
 
 class AKShareBalanceSheetData(BalanceSheetData):
@@ -43,7 +47,6 @@ class AKShareBalanceSheetData(BalanceSheetData):
     __alias_dict__ = {
         "period_ending": "REPORT_DATE",
         "fiscal_period": "REPORT_TYPE",
-        "fiscal_year": "REPORT_DATE_NAME",
         "totalEquity": "TOTAL_EQUITY",
         "totalDebt": "TOTAL_LIABILITIES",
         "totalAssets": "TOTAL_ASSETS"
@@ -79,17 +82,9 @@ class AKShareBalanceSheetFetcher(
     ) -> list[dict]:
         """Extract the data from the AKShare endpoints."""
         # pylint: disable=import-outside-toplevel
-        import akshare as ak
-        import pandas as pd
-        from openbb_akshare.utils.tools import normalize_symbol
+        em_df = get_data(query.symbol, query.period, query.use_cache)
 
-        symbol_b, symbol_f, market = normalize_symbol(query.symbol)
-        symbol_em = f"SH{symbol_b}"
-        stock_balance_sheet_by_yearly_em_df = ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
-        balance_sheet_em = stock_balance_sheet_by_yearly_em_df[["REPORT_DATE", "REPORT_TYPE", "REPORT_DATE_NAME", "TOTAL_ASSETS", "TOTAL_LIABILITIES", "TOTAL_EQUITY"]]
-        balance_sheet_em['REPORT_DATE_NAME'] = pd.to_datetime(balance_sheet_em['REPORT_DATE']).dt.year.astype(int)
-
-        return balance_sheet_em.to_dict(orient="records")
+        return em_df.to_dict(orient="records")
 
     @staticmethod
     def transform_data(
@@ -99,3 +94,24 @@ class AKShareBalanceSheetFetcher(
     ) -> list[AKShareBalanceSheetData]:
         """Transform the data."""
         return [AKShareBalanceSheetData.model_validate(d) for d in data]
+
+def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
+    if use_cache:
+        from openbb_akshare.utils.blob_cache import BlobCache
+        cache = BlobCache(table_name="balance_sheet")
+        return cache.load_cached_data(symbol, period, get_ak_data)
+    else:
+        return get_ak_data(symbol, period)
+
+def get_ak_data(symbol: str, period: str = "annual") -> pd.DataFrame:
+    import akshare as ak
+    from openbb_akshare.utils.helpers import normalize_symbol
+    symbol_b, symbol_f, market = normalize_symbol(symbol)
+    symbol_em = f"{market}{symbol_b}"
+
+    if period == "annual":
+        return ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
+    elif period == "quarter":
+        return ak.stock_balance_sheet_by_report_em(symbol=symbol_em)
+    else:
+        raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")
