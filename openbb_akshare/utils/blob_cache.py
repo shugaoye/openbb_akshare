@@ -6,10 +6,11 @@ import pickle
 import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
-from openbb_akshare.utils.tools import setup_logger
+from mysharelib.tools import setup_logger
+from openbb_akshare import project_name
 
 CACHE_TTL = 60*60  # 60 seconds
-setup_logger()
+setup_logger(project_name)
 logger = logging.getLogger(__name__)
 
 # Constant TTL strategy
@@ -73,7 +74,7 @@ class BlobCache:
 
     def load_cached_data(self, symbol:str, report_type, get_data, *args, **kwargs):
         """Load cached data from SQLite cache or generate new data."""
-        from openbb_akshare.utils.tools import normalize_symbol
+        from mysharelib.tools import normalize_symbol
         symbol_b, symbol_f, market = normalize_symbol(symbol)
         key = f"{market}{symbol_b}{report_type}"
         now = time.time()

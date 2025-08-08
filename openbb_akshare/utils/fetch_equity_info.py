@@ -44,7 +44,7 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
         dict: A dictionary containing the equity information.
     """
     from openbb_akshare.utils.equity_cache import EquityCache
-    from openbb_akshare.utils.tools import normalize_symbol
+    from mysharelib.tools import normalize_symbol
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
     cache = EquityCache(TABLE_SCHEMA)

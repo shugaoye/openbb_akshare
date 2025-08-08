@@ -12,7 +12,7 @@ from openbb_core.provider.standard_models.equity_info import (
 )
 from pydantic import Field, field_validator
 import pandas as pd
-from openbb_akshare.utils.tools import get_timestamp
+from mysharelib.tools import get_timestamp
 
 
 class AKShareEquityProfileQueryParams(EquityInfoQueryParams):

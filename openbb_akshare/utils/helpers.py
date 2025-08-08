@@ -10,13 +10,13 @@ from datetime import (
     date as dateType,
     datetime,
 )
-from .tools import normalize_date, normalize_symbol
 import akshare as ak
 
 import logging
-from openbb_akshare.utils.tools import setup_logger, normalize_symbol
+from mysharelib.tools import setup_logger, normalize_symbol
+from openbb_akshare import project_name
 
-#setup_logger()
+setup_logger(project_name)
 logger = logging.getLogger(__name__)
 
 EQUITY_HISTORY_SCHEMA = {

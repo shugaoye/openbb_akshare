@@ -77,7 +77,7 @@ class AKShareHistoricalDividendsFetcher(
     ) -> List[Dict]:
         """Extract the raw data from AKShare."""
         # pylint: disable=import-outside-toplevel
-        from openbb_akshare.utils.tools import normalize_symbol
+        from mysharelib.tools import normalize_symbol
         from openbb_akshare.utils.helpers import get_a_dividends, get_hk_dividends
 
         symbol_b, symbol_f, market = normalize_symbol(query.symbol)

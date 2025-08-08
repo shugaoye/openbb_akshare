@@ -1,5 +1,7 @@
 """openbb_akshare OpenBB Platform Provider."""
 
+project_name = __name__
+
 from openbb_core.provider.abstract.provider import Provider
 from openbb_akshare.models.available_indices import AKShareAvailableIndicesFetcher
 from openbb_akshare.models.balance_sheet import AKShareBalanceSheetFetcher
