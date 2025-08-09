@@ -1,8 +1,15 @@
 import json
 import pandas as pd
 import akshare as ak
+import logging
+from mysharelib.tools import setup_logger
+from openbb_akshare import project_name
 
-TABLE_SCHEMA = {
+setup_logger(project_name)
+
+logger = logging.getLogger(__name__)
+
+EQUITY_INFO_SCHEMA = {
     "symbol": "TEXT PRIMARY KEY",
     "org_name_en": "TEXT",
     "main_operation_business": "TEXT",
@@ -32,7 +39,7 @@ TABLE_SCHEMA = {
 def serialize_dict_fields(d):
     return {k: json.dumps(v) if isinstance(v, dict) else v for k, v in d.items()}
 
-def fetch_equity_info(symbol: str) -> pd.DataFrame:
+def fetch_equity_info(symbol: str, use_cache: bool = True) -> pd.DataFrame:
     """
     Fetches detailed information about a specific equity symbol.
 
@@ -43,17 +50,20 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
     Returns:
         dict: A dictionary containing the equity information.
     """
-    from openbb_akshare.utils.equity_cache import EquityCache
+    from mysharelib.table_cache import TableCache
     from mysharelib.tools import normalize_symbol
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
-    cache = EquityCache(TABLE_SCHEMA)
-    data = cache.read_dataframe()
-    result = data[data["symbol"] == symbol_f]
-    if not result.empty:
-        return result
+    cache = TableCache(EQUITY_INFO_SCHEMA, project=project_name, table_name="equity_info", primary_key="symbol")
 
-    columns = list(TABLE_SCHEMA.keys())
+    if use_cache:
+        data = cache.read_dataframe()
+        result = data[data["symbol"] == symbol_f]
+        if not result.empty:
+            logger.info(f"Using cached equity info for symbol: {symbol_f}")
+            return result
+
+    columns = list(EQUITY_INFO_SCHEMA.keys())
     equity_info = pd.DataFrame(columns=columns)
     try:
         if market == "HK":
@@ -88,7 +98,7 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
             cache.update_or_insert(equity_info)
         else:
             stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(symbol=f"{market}{symbol_b}")
-            keys = list(TABLE_SCHEMA.keys())
+            keys = list(EQUITY_INFO_SCHEMA.keys())
             equity_info=stock_individual_basic_info_xq_df.set_index("item").T[keys[1:]]
 
             serialized_data = [serialize_dict_fields(item) for item in equity_info.to_dict(orient="records")]
@@ -102,5 +112,6 @@ def fetch_equity_info(symbol: str) -> pd.DataFrame:
     result = data[data["symbol"] == symbol_f]
     result["listed_date"] = pd.to_datetime(result["listed_date"], unit='ms')
     result["established_date"] = pd.to_datetime(result["established_date"], unit='ms')
+    logger.info(f"Fetched equity info for symbol: {symbol_f}")
 
     return result

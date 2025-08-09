@@ -86,10 +86,6 @@ class AKShareHistoricalDividendsFetcher(
         else:
             dividends = get_a_dividends(symbol_b)
 
-        logger.info(
-            "Fetched historical dividends:\n%s",
-            dividends
-        )
         return dividends
 
     @staticmethod

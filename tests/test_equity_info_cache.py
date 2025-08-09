@@ -3,8 +3,9 @@ import pandas as pd
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
-from openbb_akshare.utils.equity_cache import EquityCache
-from openbb_akshare.utils.fetch_equity_info import TABLE_SCHEMA
+from mysharelib.table_cache import TableCache
+from openbb_akshare.utils.fetch_equity_info import EQUITY_INFO_SCHEMA
+from openbb_akshare import project_name
 
 @pytest.fixture
 def sample_equity_info_df():
@@ -54,13 +55,13 @@ def test_db_path(tmp_path):
 @pytest.fixture
 def equity_cache(test_db_path):
     print(test_db_path)
-    cache = EquityCache(TABLE_SCHEMA, test_db_path)
+    cache = TableCache(EQUITY_INFO_SCHEMA, project=project_name, db_path=test_db_path, table_name="equity_info", primary_key="symbol")
     yield cache
     if Path(test_db_path).exists():
         Path(test_db_path).unlink()
 
 def test_db_creation(test_db_path):
-    cache = EquityCache(TABLE_SCHEMA, test_db_path)
+    cache = TableCache(EQUITY_INFO_SCHEMA, project=project_name, db_path=test_db_path, table_name="equity_info", primary_key="symbol")
     assert Path(test_db_path).exists()
 
 def test_write_and_read_dataframe(sample_equity_info_df, equity_cache):
