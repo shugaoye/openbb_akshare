@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openbb-akshare"
-version = "0.5.6"
+version = "0.5.7"
 description = "AKShare extension for OpenBB"
 authors = ["Roger Ye <shugaoye@yahoo.com>"]
 license = "AGPL-3.0-only"
@@ -23,7 +23,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.plugins."openbb_core_extension"]
-openbb_akshare = "openbb_akshare.router:router"
+akshare = "openbb_akshare.router:router"
 
 [tool.poetry.plugins."openbb_provider_extension"]
-openbb_akshare = "openbb_akshare:provider"
+akshare = "openbb_akshare:provider"
