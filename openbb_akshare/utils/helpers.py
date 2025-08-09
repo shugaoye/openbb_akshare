@@ -4,14 +4,14 @@
 from typing import Dict, Any, List, Optional, Union
 import pandas as pd
 from openbb_core.provider.utils.errors import EmptyDataError
-from openbb_yfinance.utils.references import INTERVALS, MONTHS, PERIODS
 from pandas import DataFrame
 from datetime import (
     date as dateType,
     datetime,
+    timedelta
 )
 import akshare as ak
-
+from mysharelib.table_cache import TableCache
 import logging
 from mysharelib.tools import setup_logger, normalize_symbol
 from openbb_akshare import project_name
@@ -32,22 +32,83 @@ EQUITY_HISTORY_SCHEMA = {
     "amount": "REAL"
 }
 
+def get_list_date(symbol: str) -> dateType:
+    """
+    Retrieves the listing date for a given stock symbol.
+
+    Args:
+        symbol (str): The stock symbol to fetch the listing date for.
+
+    Returns:
+        Optional[str]: The listing date in 'YYYY-MM-DD' format, or None if not found.
+    """
+    from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
+
+    equity_info = fetch_equity_info(symbol)
+    listed_date = equity_info.get("listed_date")
+   
+    if listed_date is not None:
+        return pd.to_datetime(listed_date, unit='ms').iloc[0].date()
+    
+    return (datetime.now() - timedelta(days=365)).date()
+
+def check_cache(symbol: str, 
+        cache: TableCache,
+        api_key : str = "",
+        period: str = "daily"
+        ) -> bool:
+    """
+    Check if the cache contains the latest data for the given symbol.
+    """
+    from mysharelib.tools import last_closing_day
+    
+    start = get_list_date(symbol)
+    end = last_closing_day()
+    # Please note that the format of the date string must be "YYYY-MM-DD" in database.
+    cache_df = cache.fetch_date_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+    cache_df = cache_df.set_index('date')
+    cache_df.index = pd.to_datetime(cache_df.index)
+    is_cache_valid = cache_df.index.max().date() == last_closing_day()
+    if not is_cache_valid:
+        logger.warning(f"Cache for {symbol} is not up-to-date. Last date in cache: {cache_df.index.max().date()}, expected: {last_closing_day()}.")
+        data_util_today_df = ak_download_without_cache(symbol, period=period, api_key="", start_date=start.strftime("%Y%m%d"), end_date=end.strftime("%Y%m%d"))
+        cache.write_dataframe(data_util_today_df)
+    return is_cache_valid
+
 def ak_download_without_cache(
         symbol: str,
         start_date: str,
         end_date: str,
         period: str = "daily",
+        use_cache: bool = True, 
+        api_key : str = "",
         adjust: str = "",
     ) -> DataFrame:
+    """
+    Downloads historical equity data without using cache.
+    Parameters:
+    symbol: str
+        Stock symbol to fetch data for.
+    start_date (str): Start date for fetching data in 'YYYYMMDD' format.
+    end_date (str): End date for fetching data in 'YYYYMMDD' format.
+    period: str
+        Data frequency, e.g., "daily", "weekly", "monthly".
+    use_cache: bool
+        Whether to use cache for fetching data.
+    api_key: str
+        API key for authentication, if required.
+    adjust: str
+        Adjustment type
+    """
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
     if market == "HK":
-        hist_df = ak.stock_hk_hist(symbol_b, period, start_date, end_date, adjust="")
+        hist_df = ak.stock_hk_hist(symbol_b, period, start_date, end_date, adjust=adjust)
         hist_df.rename(columns={"日期": "date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
         hist_df = hist_df.drop(columns=["振幅"])
         hist_df = hist_df.drop(columns=["换手率"])
     else:
-        hist_df = ak.stock_zh_a_hist(symbol_b, period, start_date, end_date, adjust="")
+        hist_df = ak.stock_zh_a_hist(symbol_b, period, start_date, end_date, adjust=adjust)
     
         hist_df.rename(columns={"日期": "date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount", "涨跌幅":"change_percent", "涨跌额": "change"}, inplace=True)
         hist_df = hist_df.drop(columns=["股票代码"])
@@ -55,61 +116,6 @@ def ak_download_without_cache(
         hist_df = hist_df.drop(columns=["换手率"])
 
     return hist_df
-
-
-def ak_download_with_cache(
-        symbol: str,
-        start_date: str,
-        end_date: str,
-        period: str = "daily",
-        adjust: str = "",
-    ) -> DataFrame:
-    """
-    Retrieves historical equity data from a cache or downloads it from a remote source.
-    
-    Handles:
-        - Non-dividend cases (return 0)
-        - Per-share direct values (e.g., "每股0.38港元")
-        - Base-share values (e.g., "10派1元")
-        - Complex combinations (e.g., "每股派发现金股利0.088332港元,每10股派送股票股利3股")
-
-    Parameters:
-        symbol (str): Stock symbol to fetch data for.
-        start_date (str): Start date for fetching data in 'YYYYMMDD' format.
-        end_date (str): End date for fetching data in 'YYYYMMDD' format.
-        period (str): Data frequency, e.g., "daily", "weekly", "monthly".
-        adjust (str): Adjustment type, e.g., "qfq" for forward split, "hfq" for backward split.
-
-    Returns:
-        DataFrame: DataFrame containing historical equity data.
-    """
-    from openbb_akshare.utils.equity_cache import EquityCache
-    from openbb_akshare.utils.helpers import EQUITY_HISTORY_SCHEMA
-    from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
-
-    # Retrieve data from cache first
-    symbol_b, symbol_f, market = normalize_symbol(symbol)
-    cache = EquityCache(EQUITY_HISTORY_SCHEMA, table_name=f"{market}{symbol_b}")
-    start_dt = datetime.strptime(start_date, "%Y%m%d")
-    end_dt = datetime.strptime(end_date, "%Y%m%d")
-
-    start = start_dt.strftime("%Y-%m-%d")
-    end = end_dt.strftime("%Y-%m-%d")
-    data_from_cache = cache.fetch_date_range(start, end)
-    if not data_from_cache.empty:
-        return data_from_cache
-
-    # If not in cache, download data
-    equity_info = fetch_equity_info(symbol_b)
-    listed_date = pd.to_datetime(equity_info["listed_date"], unit='ms')
-    
-    first_stock_price_date = listed_date.iloc[0].strftime('%Y%m%d')
-    today = datetime.now().date().strftime("%Y%m%d")
-    # Download data using AKShare
-    data_util_today_df = ak_download_without_cache(symbol=symbol_b, period=period, start_date=first_stock_price_date, end_date=today, adjust="")
-    cache.write_dataframe(data_util_today_df)
-    
-    return cache.fetch_date_range(start, end)
 
 def ak_download(
         symbol: str,
@@ -120,15 +126,28 @@ def ak_download(
         adjust: str = "",
     ) -> DataFrame:
 
-    start = start_date.strftime("%Y%m%d")
-    end = end_date.strftime("%Y%m%d")
-    if use_cache:
-        return ak_download_with_cache(symbol, start, end, period, adjust)
+    from mysharelib.tools import get_valid_date
+
+    # Retrieve data from cache first
+    symbol_b, symbol_f, market = normalize_symbol(symbol)
+    cache = TableCache(EQUITY_HISTORY_SCHEMA, project=project_name, table_name=f"{market}{symbol_b}", primary_key="date")
     
-    result = ak_download_without_cache(symbol, start, end, period, adjust)
+    start_dt = get_valid_date(start_date)
+    end_dt = get_valid_date(end_date)
 
-    return result
+    if use_cache:
+        check_cache(symbol=symbol_b, cache=cache, api_key="", period=period)
+        data_from_cache = cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))
+        if not data_from_cache.empty:
+            logger.info(f"Getting equity {symbol} historical data from cache...")
+            return data_from_cache
 
+    # If not in cache, download data
+    # Download data using AKShare
+    data_util_today_df = ak_download_without_cache(symbol_b, period=period, api_key="", start_date=start, end_date=end)
+    cache.write_dataframe(data_util_today_df)
+    
+    return cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))
 
 def get_post_tax_dividend_per_share(dividend_str: str) -> float:
     """

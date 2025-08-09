@@ -1,7 +1,6 @@
 import pytest
 from openbb_akshare.utils.helpers import get_post_tax_dividend_per_share
 
-
 @pytest.mark.parametrize(
     "dividend_str,expected",
     [
@@ -39,3 +38,15 @@ from openbb_akshare.utils.helpers import get_post_tax_dividend_per_share
 def test_get_post_tax_dividend_per_share(dividend_str, expected):
     result = get_post_tax_dividend_per_share(dividend_str)
     assert result == pytest.approx(expected, rel=1e-4)
+
+def test_ak_download(logger):
+    from openbb_akshare.utils.helpers import ak_download
+    from datetime import date
+
+    symbol = "600036"
+    start_date = date(2025, 6, 1)
+    end_date = date(2025, 6, 30)
+
+    logger.info(f"Downloading data for {symbol} from {start_date} to {end_date}")
+    df = ak_download(symbol, start_date, end_date)
+    assert not df.empty
