@@ -14,6 +14,7 @@ from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetch
 from openbb_akshare.models.equity_profile import AKShareEquityProfileFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
 from openbb_akshare.models.income_statement import AKShareIncomeStatementFetcher
+from openbb_akshare.models.price_performance import AKSharePricePerformanceFetcher
 
 # mypy: disable-error-code="list-item"
 
@@ -38,5 +39,6 @@ provider = Provider(
         "EquityInfo": AKShareEquityProfileFetcher,
         "HistoricalDividends": AKShareHistoricalDividendsFetcher,
         "IncomeStatement": AKShareIncomeStatementFetcher,
+        "PricePerformance": AKSharePricePerformanceFetcher,
     }
 )

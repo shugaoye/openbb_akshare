@@ -50,3 +50,18 @@ def test_ak_download(logger):
     logger.info(f"Downloading data for {symbol} from {start_date} to {end_date}")
     df = ak_download(symbol, start_date, end_date)
     assert not df.empty
+
+def test_price_performance(logger):
+    def get_data(code: str) -> dict:
+        import pandas as pd
+        from mysharelib.tools import calculate_price_performance, last_closing_day
+        from openbb_akshare.utils.helpers import get_list_date, ak_download
+
+        df = ak_download(symbol=code, start_date=get_list_date(code), end_date=last_closing_day())
+        df['date'] = pd.to_datetime(df['date'])
+        df.set_index('date', inplace=True)
+        return calculate_price_performance(code, df)
+
+    symbols = '601919,600028'
+    symbols = symbols.split(",")
+    logger.info([get_data(symbol) for symbol in symbols])

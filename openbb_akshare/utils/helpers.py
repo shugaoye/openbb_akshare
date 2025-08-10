@@ -54,8 +54,8 @@ def get_list_date(symbol: str) -> dateType:
 
 def check_cache(symbol: str, 
         cache: TableCache,
-        api_key : str = "",
-        period: str = "daily"
+        api_key : Optional[str] = "",
+        period: Optional[str] = "daily"
         ) -> bool:
     """
     Check if the cache contains the latest data for the given symbol.
@@ -79,10 +79,10 @@ def ak_download_without_cache(
         symbol: str,
         start_date: str,
         end_date: str,
-        period: str = "daily",
-        use_cache: bool = True, 
-        api_key : str = "",
-        adjust: str = "",
+        period: Optional[str] = "daily",
+        use_cache: Optional[bool] = True, 
+        api_key : Optional[str] = "",
+        adjust: Optional[str] = "",
     ) -> DataFrame:
     """
     Downloads historical equity data without using cache.
@@ -119,22 +119,25 @@ def ak_download_without_cache(
 
 def ak_download(
         symbol: str,
-        start_date: dateType,
-        end_date: dateType,
-        period: str = "daily",
+        start_date: Optional[dateType] = None,
+        end_date: Optional[dateType] = None,
+        period: Optional[str] = "daily",
         use_cache: Optional[bool] = True,
-        adjust: str = "",
+        adjust: Optional[str] = "",
     ) -> DataFrame:
 
     from mysharelib.tools import get_valid_date
+
+    if start_date is None:
+        start_date = (datetime.now() - timedelta(days=365)).date()
+    if end_date is None: end_date = datetime.now().date()
+    start_dt = get_valid_date(start_date)
+    end_dt = get_valid_date(end_date)
 
     # Retrieve data from cache first
     symbol_b, symbol_f, market = normalize_symbol(symbol)
     cache = TableCache(EQUITY_HISTORY_SCHEMA, project=project_name, table_name=f"{market}{symbol_b}", primary_key="date")
     
-    start_dt = get_valid_date(start_date)
-    end_dt = get_valid_date(end_date)
-
     if use_cache:
         check_cache(symbol=symbol_b, cache=cache, api_key="", period=period)
         data_from_cache = cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))

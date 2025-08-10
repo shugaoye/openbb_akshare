@@ -60,7 +60,7 @@ def fetch_equity_info(symbol: str, use_cache: bool = True) -> pd.DataFrame:
         data = cache.read_dataframe()
         result = data[data["symbol"] == symbol_f]
         if not result.empty:
-            logger.info(f"Using cached equity info for symbol: {symbol_f}")
+            #logger.info(f"Using cached equity info for symbol: {symbol_f}")
             return result
 
     columns = list(EQUITY_INFO_SCHEMA.keys())
@@ -112,6 +112,6 @@ def fetch_equity_info(symbol: str, use_cache: bool = True) -> pd.DataFrame:
     result = data[data["symbol"] == symbol_f]
     result["listed_date"] = pd.to_datetime(result["listed_date"], unit='ms')
     result["established_date"] = pd.to_datetime(result["established_date"], unit='ms')
-    logger.info(f"Fetched equity info for symbol: {symbol_f}")
+    # logger.info(f"Fetched equity info for symbol: {symbol_f}")
 
     return result
