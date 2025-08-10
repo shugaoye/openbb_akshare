@@ -1,16 +1,19 @@
-import os
 import sqlite3
 import pandas as pd
 import time
 import pickle
 import logging
-from openbb_core.app.utils import get_user_cache_directory
+from mysharelib.tools import setup_logger
+from openbb_akshare import project_name
+
+setup_logger(project_name)
 
 CACHE_TTL = 60*60  # 60 seconds
 logger = logging.getLogger(__name__)
+
 def get_connection():
-    from openbb_akshare.utils import get_cache_path
-    db_path = get_cache_path()
+    from mysharelib import get_cache_path
+    db_path = get_cache_path(project_name)
 
     return sqlite3.connect(db_path)
 

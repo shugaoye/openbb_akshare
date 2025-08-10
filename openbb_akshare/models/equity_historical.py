@@ -22,7 +22,6 @@ from openbb_core.provider.utils.helpers import (
     amake_request,
     get_querystring,
 )
-from openbb_fmp.utils.helpers import get_interval
 from pydantic import Field
 
 

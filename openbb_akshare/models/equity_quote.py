@@ -12,8 +12,10 @@ from openbb_core.provider.standard_models.equity_quote import (
 )
 from pydantic import Field
 import logging
-from openbb_akshare.utils.tools import setup_logger, normalize_symbol, get_symbol_base
+from mysharelib.tools import setup_logger, normalize_symbol
+from openbb_akshare import project_name
 
+setup_logger(project_name)
 logger = logging.getLogger(__name__)
 
 class AKShareEquityQuoteQueryParams(EquityQuoteQueryParams):

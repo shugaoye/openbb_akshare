@@ -96,14 +96,12 @@ class AKShareBalanceSheetFetcher(
         return [AKShareBalanceSheetData.model_validate(d) for d in data]
 
 def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
-    if use_cache:
-        from openbb_akshare.utils.blob_cache import BlobCache
-        cache = BlobCache(table_name="balance_sheet")
-        return cache.load_cached_data(symbol, period, get_ak_data)
-    else:
-        return get_ak_data(symbol, period)
+    from openbb_akshare import project_name
+    from mysharelib.blob_cache import BlobCache
+    cache = BlobCache(table_name="balance_sheet", project=project_name)
+    return cache.load_cached_data(symbol, period, use_cache, get_ak_data)
 
-def get_ak_data(symbol: str, period: str = "annual") -> pd.DataFrame:
+def get_ak_data(symbol: str, period: str = "annual", api_key : Optional[str] = "") -> pd.DataFrame:
     import akshare as ak
     from openbb_akshare.utils.helpers import normalize_symbol
     symbol_b, symbol_f, market = normalize_symbol(symbol)
