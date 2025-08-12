@@ -11,3 +11,7 @@ def setup_logging():
 @pytest.fixture
 def logger():
     return logging.getLogger(__name__)
+
+@pytest.fixture
+def default_provider():
+    return "akshare"

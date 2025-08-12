@@ -33,6 +33,10 @@ class AKShareIncomeStatementQueryParams(IncomeStatementQueryParams):
         default="annual",
         description=QUERY_DESCRIPTIONS.get("period", ""),
     )
+    limit: Optional[int] = Field(
+        default=5,
+        description=QUERY_DESCRIPTIONS.get("limit", ""),
+    )
     use_cache: bool = Field(
         default=True,
         description="Whether to use a cached request. The quote is cached for one hour.",
@@ -112,7 +116,10 @@ class AKShareIncomeStatementFetcher(
 
         em_df = get_data(query.symbol, query.period, query.use_cache)
 
-        return em_df.to_dict(orient="records")
+        if query.limit is None:
+            return em_df.to_dict(orient="records")
+        else:
+            return em_df.head(query.limit).to_dict(orient="records")
 
     @staticmethod
     def transform_data(
