@@ -47,7 +47,22 @@ class AKShareCashFlowStatementData(CashFlowStatementData):
         "period_ending": "REPORT_DATE",
         "fiscal_period": "REPORT_TYPE",
         "reported_currency": "CURRENCY",
+        "营业性现金流": "NETCASH_OPERATE",
+        "投资性现金流": "NETCASH_INVEST",
+        "融资性现金流": "NETCASH_FINANCE",
     }
+    营业性现金流: Optional[float] = Field(
+        default=None,
+        description="营业性现金流.",
+    )
+    投资性现金流: Optional[float] = Field(
+        default=None,
+        description="投资性现金流.",
+    )
+    融资性现金流: Optional[float] = Field(
+        default=None,
+        description="融资性现金流.",
+    )
 
     @field_validator("period_ending", mode="before", check_fields=False)
     @classmethod

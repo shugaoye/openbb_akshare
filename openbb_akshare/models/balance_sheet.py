@@ -46,10 +46,23 @@ class AKShareBalanceSheetData(BalanceSheetData):
     __alias_dict__ = {
         "period_ending": "REPORT_DATE",
         "fiscal_period": "REPORT_TYPE",
-        "totalEquity": "TOTAL_EQUITY",
-        "totalDebt": "TOTAL_LIABILITIES",
-        "totalAssets": "TOTAL_ASSETS"
+        "股东权益": "TOTAL_EQUITY",
+        "总负债": "TOTAL_LIABILITIES",
+        "总资产": "TOTAL_ASSETS"
     }
+
+    总权益: Optional[float] = Field(
+        default=None,
+        description="总权益.",
+    )
+    负债总额: Optional[float] = Field(
+        default=None,
+        description="负债总额.",
+    )
+    总资产: Optional[float] = Field(
+        default=None,
+        description="总资产.",
+    )
 
     @field_validator("period_ending", mode="before", check_fields=False)
     @classmethod
