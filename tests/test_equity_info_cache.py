@@ -101,3 +101,15 @@ def test_connection_management(equity_cache):
     equity_cache.close()
     with pytest.raises(AttributeError):
         equity_cache.conn.cursor()
+
+@pytest.mark.parametrize("symbol", ["02800", "00011"])
+
+def test_ak_xq_fetch_equity_info(symbol):
+    """
+    Test akshare equity info. 
+    - 02800 returns nan for listed date.
+    - 00011 returns 1952-12-04 for established_date.
+    """
+    from openbb import obb
+    equity_info_df = obb.equity.profile(symbol=symbol, provider="akshare").to_dataframe()
+    assert equity_info_df.shape[0] > 0

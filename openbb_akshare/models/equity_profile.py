@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 
 from typing import Any, Dict, List, Optional
-from datetime import date as dateType
+from datetime import (date as dateType, datetime)
 
 from openbb_core.provider.abstract.fetcher import Fetcher
 from openbb_core.provider.standard_models.equity_info import (
@@ -62,7 +62,10 @@ class AKShareEquityProfileData(EquityInfoData):
         description="The number of listed shares outstanding.",
         default=None,
     )
-    established_date: Optional[dateType] = Field(
+    first_stock_price_date: Optional[dateType|None] = Field(
+        default=None, description="Date of the establishment."
+    )
+    established_date: Optional[dateType|None] = Field(
         default=None, description="Date of the establishment."
     )
     actual_issue_vol: Optional[int] = Field(
@@ -107,6 +110,8 @@ class AKShareEquityProfileData(EquityInfoData):
         # pylint: disable=import-outside-toplevel
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
+        if pd.isna(v):
+            return None
 
         return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
@@ -117,6 +122,8 @@ class AKShareEquityProfileData(EquityInfoData):
         # pylint: disable=import-outside-toplevel
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
+        if pd.isna(v):
+            return None
 
         return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
