@@ -151,16 +151,18 @@ class AKShareEquityProfileFetcher(
         from openbb_core.provider.utils.errors import EmptyDataError
         from warnings import warn
 
+        api_key = credentials.get("akshare_api_key") if credentials else ""
+
         symbols = query.symbol.split(",")
         results = []
         messages: list = []
 
-        async def get_one(symbol):
+        async def get_one(symbol, api_key: str, use_cache: bool = True):
             from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
             """Get the data for one ticker symbol."""
             try:
                 result: dict = {}
-                result = fetch_equity_info(symbol).to_dict(orient="records")[0]
+                result = fetch_equity_info(symbol, api_key=api_key, use_cache=use_cache).to_dict(orient="records")[0]
                 if result:
                     results.append(result)
             except Exception as e:
@@ -168,7 +170,7 @@ class AKShareEquityProfileFetcher(
                     f"Error getting data for {symbol} -> {e.__class__.__name__}: {e}"
                 )
 
-        tasks = [get_one(symbol) for symbol in symbols]
+        tasks = [get_one(symbol, api_key=api_key, use_cache=query.use_cache) for symbol in symbols]
 
         await asyncio.gather(*tasks)
 
