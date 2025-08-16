@@ -29,10 +29,12 @@ class AKShareEquityProfileData(EquityInfoData):
     """AKShare Equity Profile Data."""
 
     __alias_dict__ = {
+        "公司名称": "org_name_cn",
+        "公司简介": "org_cn_introduction",
+        "主要范围": "main_operation_business",
+        "成立日期": "established_date",
+        "上市日期": "listed_date",
         "name": "org_name_en",
-        "org_short_name_cn": "quoteType",
-        "short_description": "main_operation_business",
-        "long_description": "org_cn_introduction",
         "ceo": "chairman",
         "company_url": "org_website",
         "business_address": "reg_address_cn",
@@ -43,9 +45,23 @@ class AKShareEquityProfileData(EquityInfoData):
         "employees": "staff_num",
         "sector": "affiliate_industry",
         "industry_category": "operating_scope",
-        "first_stock_price_date": "listed_date",
     }
 
+    公司名称: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    公司简介: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    主要范围: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    上市日期: Optional[dateType|None] = Field(
+        default=None, description="Date of the establishment."
+    )
     org_name_cn: Optional[str] = Field(
         description="Chinese name of the asset.",
         default=None,
@@ -61,9 +77,6 @@ class AKShareEquityProfileData(EquityInfoData):
     org_id: Optional[str] = Field(
         description="The number of listed shares outstanding.",
         default=None,
-    )
-    first_stock_price_date: Optional[dateType|None] = Field(
-        default=None, description="Date of the establishment."
     )
     established_date: Optional[dateType|None] = Field(
         default=None, description="Date of the establishment."
@@ -115,7 +128,7 @@ class AKShareEquityProfileData(EquityInfoData):
 
         return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
-    @field_validator("first_stock_price_date", mode="before", check_fields=False)
+    @field_validator("上市日期", mode="before", check_fields=False)
     @classmethod
     def validate_first_trade_date(cls, v):
         """Validate first stock price date."""
