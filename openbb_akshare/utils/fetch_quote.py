@@ -35,8 +35,10 @@ def get_data(market):
     if market == "HK":
         # Get Hong Kong stock market data
         df = ak.stock_hk_spot_em()
-    elif market == "SH" or market == "SZ":
-        df = ak.stock_zh_a_spot_em()
+    elif market == "SH":
+        df = ak.stock_sh_a_spot_em()
+    elif market == "SZ":
+        df = ak.stock_sz_a_spot_em()
     elif market == "BJ":
         # Get Beijing stock market data
         df = ak.stock_bj_a_spot_em()
@@ -44,18 +46,34 @@ def get_data(market):
         # Get A-share market data
         df = pd.DataFrame()
 
-    return df[["代码", "名称", "最新价", "今开", "最高", "最低", "涨跌幅", "涨跌额", "成交量", "昨收"]]
+    #return df[["代码", "名称", "最新价", "今开", "最高", "最低", "涨跌幅", "涨跌额", "成交量", "昨收"]]
+    return df
+
+def get_exchange_name(market):
+    if market == "HK":
+        return "HKEX"
+    elif market == "SH":
+        return "SSE"
+    elif market == "SZ":
+        return "SZSE"
+    elif market == "BJ":
+        return "BSE"
+    else:
+        raise ValueError(f"Unsupported market: {market}")
 
 def get_primary_key(market):
     if market == "HK":
         return "equity_quote_HK"
-    elif market in ["SH", "SZ"]:
+    elif market == "SH":
         return "equity_quote_SH"
+    elif market == "SZ":
+        return "equity_quote_SZ"
     elif market == "BJ":
         return "equity_quote_BJ"
     else:
         raise ValueError(f"Unsupported market: {market}")
-def load_cached_data(market, use_cache=True):
+
+def load_cached_data(market, use_cache=True)->pd.DataFrame:
     if not use_cache:
         logger.info("Cache disabled, fetching fresh data...")
         return get_data(market)

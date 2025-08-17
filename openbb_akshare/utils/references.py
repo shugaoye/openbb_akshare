@@ -697,84 +697,18 @@ COUNTRIES = [
 ]
 
 EXCHANGES = [
-    "ams",
-    "aqs",
-    "ase",
-    "asx",
-    "ath",
-    "ber",
-    "bru",
-    "bse",
-    "bts",
-    "bud",
-    "bue",
-    "bvb",
-    "bvc",
-    "ccs",
-    "cnq",
-    "cph",
-    "cxe",
-    "dfm",
-    "doh",
-    "dus",
-    "ebs",
-    "fka",
-    "fra",
-    "ger",
-    "ham",
-    "han",
-    "hel",
-    "hkg",
-    "ice",
-    "iob",
-    "ise",
-    "ist",
-    "jkt",
-    "jnb",
-    "jpx",
-    "kls",
-    "kuw",
-    "lis",
-    "lit",
-    "lse",
-    "mce",
-    "mex",
-    "mil",
-    "mun",
-    "ncm",
-    "neo",
-    "ngm",
-    "nms",
-    "nsi",
-    "nyq",
-    "nze",
-    "oem",
-    "oqb",
-    "oqx",
-    "osl",
-    "par",
-    "pnk",
-    "pra",
-    "ris",
-    "sau",
-    "ses",
-    "set",
-    "sgo",
-    "shh",
-    "shz",
-    "sto",
-    "stu",
-    "tai",
-    "tal",
-    "tlv",
-    "tor",
-    "two",
-    "van",
-    "vie",
-    "vse",
-    "wse",
+    "hkex",
+    "sse",
+    "szse",
+    "bse"
 ]
 
+MARKETS = {
+    "hkex": "HK",
+    "sse": "SH",
+    "szse": "SZ",
+    "bse": "BJ"
+}
 
 SECTOR_MAP = {
     "basic_materials": "Basic Materials",
@@ -790,7 +724,7 @@ SECTOR_MAP = {
     "utilities": "Utilities",
 }
 
-SECTORS = Literal[
+SECTORS = [
     "basic_materials",
     "communication_services",
     "consumer_cyclical",
@@ -802,85 +736,6 @@ SECTORS = Literal[
     "real_estate",
     "technology",
     "utilities",
-]
-
-Exchanges = Literal[
-    "ams",
-    "aqs",
-    "ase",
-    "asx",
-    "ath",
-    "ber",
-    "bru",
-    "bse",
-    "bts",
-    "bud",
-    "bue",
-    "bvb",
-    "bvc",
-    "ccs",
-    "cnq",
-    "cph",
-    "cxe",
-    "dfm",
-    "doh",
-    "dus",
-    "ebs",
-    "fka",
-    "fra",
-    "ger",
-    "ham",
-    "han",
-    "hel",
-    "hkg",
-    "ice",
-    "iob",
-    "ise",
-    "ist",
-    "jkt",
-    "jnb",
-    "jpx",
-    "kls",
-    "kuw",
-    "lis",
-    "lit",
-    "lse",
-    "mce",
-    "mex",
-    "mil",
-    "mun",
-    "ncm",
-    "neo",
-    "ngm",
-    "nms",
-    "nsi",
-    "nyq",
-    "nze",
-    "oem",
-    "oqb",
-    "oqx",
-    "osl",
-    "par",
-    "pnk",
-    "pra",
-    "ris",
-    "sau",
-    "ses",
-    "set",
-    "sgo",
-    "shh",
-    "shz",
-    "sto",
-    "stu",
-    "tai",
-    "tal",
-    "tlv",
-    "tor",
-    "two",
-    "van",
-    "vie",
-    "vse",
-    "wse",
 ]
 
 PEER_GROUPS = [
@@ -1245,138 +1100,6 @@ INDUSTRY_MAP = {
         "home_builders": "Homebuilders",
     },
 }
-
-
-class AKSharePredefinedScreenerData(EquityPerformanceData):
-    """AKShare Predefined Screener Data."""
-
-    __alias_dict__ = {
-        "name": "shortName",
-        "price": "regularMarketPrice",
-        "change": "regularMarketChange",
-        "percent_change": "regularMarketChangePercent",
-        "volume": "regularMarketVolume",
-        "open": "regularMarketOpen",
-        "high": "regularMarketDayHigh",
-        "low": "regularMarketDayLow",
-        "previous_close": "regularMarketPreviousClose",
-        "ma50": "fiftyDayAverage",
-        "ma200": "twoHundredDayAverage",
-        "year_high": "fiftyTwoWeekHigh",
-        "year_low": "fiftyTwoWeekLow",
-        "market_cap": "marketCap",
-        "shares_outstanding": "sharesOutstanding",
-        "book_value": "bookValue",
-        "price_to_book": "priceToBook",
-        "eps_ttm": "epsTrailingTwelveMonths",
-        "pe_forward": "forwardPE",
-        "dividend_yield": "trailingAnnualDividendYield",
-        "earnings_date": "earnings_date",
-        "currency": "currency",
-        "exchange_timezone": "exchangeTimezoneName",
-    }
-
-    open: Optional[float] = Field(
-        default=None,
-        description="Open price for the day.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    high: Optional[float] = Field(
-        default=None,
-        description="High price for the day.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    low: Optional[float] = Field(
-        default=None,
-        description="Low price for the day.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    previous_close: Optional[float] = Field(
-        default=None,
-        description="Previous close price.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    ma50: Optional[float] = Field(
-        default=None,
-        description="50-day moving average.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    ma200: Optional[float] = Field(
-        default=None,
-        description="200-day moving average.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    year_high: Optional[float] = Field(
-        default=None,
-        description="52-week high.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    year_low: Optional[float] = Field(
-        default=None,
-        description="52-week low.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    market_cap: Optional[float] = Field(
-        default=None,
-        description="Market Cap.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    shares_outstanding: Optional[float] = Field(
-        default=None,
-        description="Shares outstanding.",
-    )
-    book_value: Optional[float] = Field(
-        default=None,
-        description="Book value per share.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    price_to_book: Optional[float] = Field(
-        default=None,
-        description="Price to book ratio.",
-    )
-    eps_ttm: Optional[float] = Field(
-        default=None,
-        description="Earnings per share over the trailing twelve months.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    eps_forward: Optional[float] = Field(
-        default=None,
-        description="Forward earnings per share.",
-        json_schema_extra={"x-unit_measurement": "currency"},
-    )
-    pe_forward: Optional[float] = Field(
-        default=None,
-        description="Forward price-to-earnings ratio.",
-    )
-    dividend_yield: Optional[float] = Field(
-        default=None,
-        description="Trailing twelve month dividend yield.",
-        json_schema_extra={"x-unit_measurement": "percent", "frontend_multiply": 100},
-    )
-    exchange: Optional[str] = Field(
-        default=None,
-        description="Exchange where the stock is listed.",
-    )
-    exchange_timezone: Optional[str] = Field(
-        default=None,
-        description="Timezone of the exchange.",
-    )
-    earnings_date: Optional[datetime] = Field(
-        default=None,
-        description="Most recent earnings date.",
-    )
-    currency: Optional[str] = Field(
-        default=None,
-        description="Currency of the price data.",
-    )
-
-    @field_validator("percent_change", mode="before", check_fields=False)
-    @classmethod
-    def _validate_percent_change(cls, v):
-        """Normalize percent change."""
-        if v is not None:
-            return v / 100
-        return v
 
 
 def get_industry_sector(industry: str):
