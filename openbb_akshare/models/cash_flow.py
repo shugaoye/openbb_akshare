@@ -33,7 +33,6 @@ class AKShareCashFlowStatementQueryParams(CashFlowStatementQueryParams):
     limit: Optional[int] = Field(
         default=5,
         description=QUERY_DESCRIPTIONS.get("limit", ""),
-        le=5,
     )
     use_cache: bool = Field(
         default=True,
@@ -48,7 +47,22 @@ class AKShareCashFlowStatementData(CashFlowStatementData):
         "period_ending": "REPORT_DATE",
         "fiscal_period": "REPORT_TYPE",
         "reported_currency": "CURRENCY",
+        "营业性现金流": "NETCASH_OPERATE",
+        "投资性现金流": "NETCASH_INVEST",
+        "融资性现金流": "NETCASH_FINANCE",
     }
+    营业性现金流: Optional[float] = Field(
+        default=None,
+        description="营业性现金流.",
+    )
+    投资性现金流: Optional[float] = Field(
+        default=None,
+        description="投资性现金流.",
+    )
+    融资性现金流: Optional[float] = Field(
+        default=None,
+        description="融资性现金流.",
+    )
 
     @field_validator("period_ending", mode="before", check_fields=False)
     @classmethod
@@ -82,7 +96,10 @@ class AKShareCashFlowStatementFetcher(
         # pylint: disable=import-outside-toplevel
         em_df = get_data(query.symbol, query.period, query.use_cache)
 
-        return em_df.to_dict(orient="records")
+        if query.limit is None:
+            return em_df.to_dict(orient="records")
+        else:
+            return em_df.head(query.limit).to_dict(orient="records")
 
     @staticmethod
     def transform_data(

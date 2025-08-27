@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 
 from typing import Any, Dict, List, Optional
-from datetime import date as dateType
+from datetime import (date as dateType, datetime)
 
 from openbb_core.provider.abstract.fetcher import Fetcher
 from openbb_core.provider.standard_models.equity_info import (
@@ -29,10 +29,12 @@ class AKShareEquityProfileData(EquityInfoData):
     """AKShare Equity Profile Data."""
 
     __alias_dict__ = {
+        "公司名称": "org_name_cn",
+        "公司简介": "org_cn_introduction",
+        "主要范围": "main_operation_business",
+        "成立日期": "established_date",
+        "上市日期": "listed_date",
         "name": "org_name_en",
-        "org_short_name_cn": "quoteType",
-        "short_description": "main_operation_business",
-        "long_description": "org_cn_introduction",
         "ceo": "chairman",
         "company_url": "org_website",
         "business_address": "reg_address_cn",
@@ -43,9 +45,23 @@ class AKShareEquityProfileData(EquityInfoData):
         "employees": "staff_num",
         "sector": "affiliate_industry",
         "industry_category": "operating_scope",
-        "first_stock_price_date": "listed_date",
     }
 
+    公司名称: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    公司简介: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    主要范围: Optional[str] = Field(
+        description="Alias of org_name_cn.",
+        default=None,
+    )
+    上市日期: Optional[dateType|None] = Field(
+        default=None, description="Date of the establishment."
+    )
     org_name_cn: Optional[str] = Field(
         description="Chinese name of the asset.",
         default=None,
@@ -62,7 +78,7 @@ class AKShareEquityProfileData(EquityInfoData):
         description="The number of listed shares outstanding.",
         default=None,
     )
-    established_date: Optional[dateType] = Field(
+    established_date: Optional[dateType|None] = Field(
         default=None, description="Date of the establishment."
     )
     actual_issue_vol: Optional[int] = Field(
@@ -107,16 +123,20 @@ class AKShareEquityProfileData(EquityInfoData):
         # pylint: disable=import-outside-toplevel
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
+        if pd.isna(v):
+            return None
 
         return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
-    @field_validator("first_stock_price_date", mode="before", check_fields=False)
+    @field_validator("上市日期", mode="before", check_fields=False)
     @classmethod
     def validate_first_trade_date(cls, v):
         """Validate first stock price date."""
         # pylint: disable=import-outside-toplevel
         from datetime import timezone  # noqa
         from openbb_core.provider.utils.helpers import safe_fromtimestamp  # noqa
+        if pd.isna(v):
+            return None
 
         return safe_fromtimestamp(get_timestamp(v), tz=timezone.utc).date() if v else None
 
@@ -144,16 +164,18 @@ class AKShareEquityProfileFetcher(
         from openbb_core.provider.utils.errors import EmptyDataError
         from warnings import warn
 
+        api_key = credentials.get("akshare_api_key") if credentials else ""
+
         symbols = query.symbol.split(",")
         results = []
         messages: list = []
 
-        async def get_one(symbol):
+        async def get_one(symbol, api_key: str, use_cache: bool = True):
             from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
             """Get the data for one ticker symbol."""
             try:
                 result: dict = {}
-                result = fetch_equity_info(symbol).to_dict(orient="records")[0]
+                result = fetch_equity_info(symbol, api_key=api_key, use_cache=use_cache).to_dict(orient="records")[0]
                 if result:
                     results.append(result)
             except Exception as e:
@@ -161,7 +183,7 @@ class AKShareEquityProfileFetcher(
                     f"Error getting data for {symbol} -> {e.__class__.__name__}: {e}"
                 )
 
-        tasks = [get_one(symbol) for symbol in symbols]
+        tasks = [get_one(symbol, api_key=api_key, use_cache=query.use_cache) for symbol in symbols]
 
         await asyncio.gather(*tasks)
 

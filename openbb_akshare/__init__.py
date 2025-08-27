@@ -12,6 +12,7 @@ from openbb_akshare.models.currency_snapshots import AKShareCurrencySnapshotsFet
 from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
 from openbb_akshare.models.equity_profile import AKShareEquityProfileFetcher
+from openbb_akshare.models.equity_screener import AKShareEquityScreenerFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
 from openbb_akshare.models.income_statement import AKShareIncomeStatementFetcher
 from openbb_akshare.models.price_performance import AKSharePricePerformanceFetcher
@@ -21,9 +22,7 @@ from openbb_akshare.models.price_performance import AKSharePricePerformanceFetch
 provider = Provider(
     name="akshare",
     description="Data provider for openbb-akshare.",
-    # Only add 'credentials' if they are needed.
-    # For multiple login details, list them all here.
-    # credentials=["api_key"],
+    credentials=["api_key"],
     website="https://akshare.akfamily.xyz/",
     # Here, we list out the fetchers showing what our provider can get.
     # The dictionary key is the fetcher's name, used in the `router.py`.
@@ -37,6 +36,7 @@ provider = Provider(
         "EquityQuote": AKShareEquityQuoteFetcher,
         "EquityHistorical": AKShareEquityHistoricalFetcher,
         "EquityInfo": AKShareEquityProfileFetcher,
+        "EquityScreener": AKShareEquityScreenerFetcher,
         "HistoricalDividends": AKShareHistoricalDividendsFetcher,
         "IncomeStatement": AKShareIncomeStatementFetcher,
         "PricePerformance": AKSharePricePerformanceFetcher,

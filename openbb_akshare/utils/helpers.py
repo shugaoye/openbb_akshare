@@ -32,7 +32,7 @@ EQUITY_HISTORY_SCHEMA = {
     "amount": "REAL"
 }
 
-def get_list_date(symbol: str) -> dateType:
+def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
     """
     Retrieves the listing date for a given stock symbol.
 
@@ -44,7 +44,7 @@ def get_list_date(symbol: str) -> dateType:
     """
     from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
 
-    equity_info = fetch_equity_info(symbol)
+    equity_info = fetch_equity_info(symbol, api_key=api_key)
     listed_date = equity_info.get("listed_date")
    
     if listed_date is not None:
@@ -123,6 +123,7 @@ def ak_download(
         end_date: Optional[dateType] = None,
         period: Optional[str] = "daily",
         use_cache: Optional[bool] = True,
+        api_key: Optional[str] = "",
         adjust: Optional[str] = "",
     ) -> DataFrame:
 
@@ -139,7 +140,7 @@ def ak_download(
     cache = TableCache(EQUITY_HISTORY_SCHEMA, project=project_name, table_name=f"{market}{symbol_b}", primary_key="date")
     
     if use_cache:
-        check_cache(symbol=symbol_b, cache=cache, api_key="", period=period)
+        check_cache(symbol=symbol_b, cache=cache, api_key=api_key, period=period)
         data_from_cache = cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))
         if not data_from_cache.empty:
             logger.info(f"Getting equity {symbol} historical data from cache...")
@@ -147,7 +148,7 @@ def ak_download(
 
     # If not in cache, download data
     # Download data using AKShare
-    data_util_today_df = ak_download_without_cache(symbol_b, period=period, api_key="", start_date=start, end_date=end)
+    data_util_today_df = ak_download_without_cache(symbol_b, period=period, api_key=api_key, start_date=start, end_date=end)
     cache.write_dataframe(data_util_today_df)
     
     return cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))

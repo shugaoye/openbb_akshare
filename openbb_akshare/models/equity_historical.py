@@ -104,9 +104,10 @@ class AKShareEquityHistoricalFetcher(
     ) -> List[Dict]:
         """Return the raw data from the AKShare endpoint."""
         from openbb_akshare.utils.helpers import ak_download
+        api_key = credentials.get("akshare_api_key") if credentials else ""
 
         data = ak_download(symbol=query.symbol, start_date=query.start_date, end_date=query.end_date, 
-                           period="daily", use_cache=query.use_cache, adjust="")
+                           period="daily", use_cache=query.use_cache, api_key=api_key, adjust="")
 
         if data.empty:
             raise EmptyDataError()

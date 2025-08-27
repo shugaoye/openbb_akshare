@@ -33,6 +33,10 @@ class AKShareIncomeStatementQueryParams(IncomeStatementQueryParams):
         default="annual",
         description=QUERY_DESCRIPTIONS.get("period", ""),
     )
+    limit: Optional[int] = Field(
+        default=5,
+        description=QUERY_DESCRIPTIONS.get("limit", ""),
+    )
     use_cache: bool = Field(
         default=True,
         description="Whether to use a cached request. The quote is cached for one hour.",
@@ -46,36 +50,21 @@ class AKShareIncomeStatementData(IncomeStatementData):
         "period_ending": "REPORT_DATE",
         "fiscal_period": "REPORT_TYPE",
         "reported_currency": "CURRENCY",
-        "total_pre_tax_income": "TOTAL_PROFIT",
-        "income_tax_expense": "INCOME_TAX",
-        "consolidated_net_income": "NETPROFIT",
-        "basic_earnings_per_share": "BASIC_EPS",
-        "diluted_earnings_per_share": "DILUTED_EPS",
+        "总营收": "TOTAL_OPERATE_INCOME",
+        "净利润": "PARENT_NETPROFIT"
     }
 
     reported_currency: Optional[str] = Field(
         default=None,
         description="The currency in which the balance sheet was reported.",
     )
-    total_pre_tax_income: Optional[float] = Field(
+    总营收: Optional[float] = Field(
         default=None,
         description="Total pre-tax income.",
     )
-    income_tax_expense: Optional[float] = Field(
+    净利润: Optional[float] = Field(
         default=None,
         description="Income tax expense.",
-    )
-    consolidated_net_income: Optional[float] = Field(
-        default=None,
-        description="Consolidated net income.",
-    )
-    basic_earnings_per_share: Optional[float] = Field(
-        default=None,
-        description="Basic earnings per share.",
-    )
-    diluted_earnings_per_share: Optional[float] = Field(
-        default=None,
-        description="Diluted earnings per share.",
     )
 
     @model_validator(mode="before")
@@ -112,7 +101,10 @@ class AKShareIncomeStatementFetcher(
 
         em_df = get_data(query.symbol, query.period, query.use_cache)
 
-        return em_df.to_dict(orient="records")
+        if query.limit is None:
+            return em_df.to_dict(orient="records")
+        else:
+            return em_df.head(query.limit).to_dict(orient="records")
 
     @staticmethod
     def transform_data(
