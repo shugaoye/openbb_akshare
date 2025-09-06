@@ -35,8 +35,12 @@ class AKShareKeyMetricsQueryParams(KeyMetricsQueryParams):
     }
 
     period: Literal["annual", "quarter"] = Field(
-        default="annual",
+        default="quarter",
         description=QUERY_DESCRIPTIONS.get("period", ""),
+    )
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to use a cached request. The quote is cached for one hour.",
     )
 
 class AKShareKeyMetricsData(KeyMetricsData):
@@ -70,25 +74,13 @@ class AKShareKeyMetricsFetcher(
         """Return the raw data from the AKShare endpoint."""
         api_key = credentials.get("akshare_api_key") if credentials else ""
 
-        base_url = "https://financialmodelingprep.com/api/v3"
         symbols = query.symbol.split(",")
         results: List = []
 
         async def get_one(symbol, api_key):
             """Get data for one symbol."""
-            import akshare as ak
-            from mysharelib.em.get_a_info_em import get_a_info_em
-            from mysharelib.tools import normalize_symbol
-
-            symbol_b, symbol_f, market = normalize_symbol(symbol)
-            df_base, df_comparison = get_a_info_em(symbol_f)
-
-            ak.stock.cons.xq_a_token=api_key
-            stock_individual_spot_xq_df = ak.stock_individual_spot_xq(symbol=f"SH{symbol_b}")
-            pe_dynamic = stock_individual_spot_xq_df.loc[stock_individual_spot_xq_df['item'] == '市盈率(动)', 'value'].iloc[0]
-            market_cap = stock_individual_spot_xq_df.loc[stock_individual_spot_xq_df['item'] == '流通值', 'value'].iloc[0]
-            df_base.loc['市盈率(动)'] = pe_dynamic
-            df_base.loc['流通值'] = market_cap
+            from openbb_akshare.utils.ak_key_metrics import fetch_key_metrics
+            df_base = fetch_key_metrics(symbol, period=query.period, use_cache=query.use_cache, api_key=api_key)
 
             results.append(df_base['数值'].to_dict())
 

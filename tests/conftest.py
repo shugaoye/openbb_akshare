@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import logging
 import pytest
 from mysharelib.tools import setup_logger, normalize_symbol
@@ -15,3 +17,11 @@ def logger():
 @pytest.fixture
 def default_provider():
     return "akshare"
+
+@pytest.fixture
+def akshare_api_key():
+    load_dotenv() 
+    akshare_api_key = os.environ.get("AKSHARE_API_KEY")
+    if akshare_api_key is None:
+        raise ValueError("AKSHARE_API_KEY environment variable not set.")
+    return akshare_api_key
