@@ -48,6 +48,7 @@ def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
     listed_date = equity_info.get("listed_date")
    
     if listed_date is not None:
+        logger.info(f"Listing date for {symbol} is {listed_date}.")
         return pd.to_datetime(listed_date, unit='ms').iloc[0].date()
     
     return (datetime.now() - timedelta(days=365)).date()
