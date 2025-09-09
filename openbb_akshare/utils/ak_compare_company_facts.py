@@ -26,8 +26,8 @@ def fetch_compare_company(
     from mysharelib.blob_cache import BlobCache
 
     symbol_b, _, market = normalize_symbol(symbol)
-    if market not in ["SH", "SZ", "BJ"]:
-        logger.warning("AKShare key metrics only support A shares.")
+    if market not in ["SH", "SZ", "BJ", "HK"]:
+        logger.warning("fetch_compare_company只支持A股和港股。")
         return pd.DataFrame()
     cache = BlobCache(table_name="compare_company_facts", project=project_name)
     data = cache.load_cached_data(symbol_b, period, use_cache, _get_metrics, api_key=api_key)
@@ -41,8 +41,12 @@ def _get_metrics(
     api_key : Optional[str] = ""
 ) -> pd.DataFrame:
     from mysharelib.em.get_a_info_em import get_a_info_em
+    from mysharelib.em.get_hk_info_em import get_hk_info_em
 
-    _, symbol_f, _ = normalize_symbol(symbol)
-    _, df_comparison = get_a_info_em(symbol_f)
+    _, symbol_f, market = normalize_symbol(symbol)
+    if market in ["HK"]:
+        _, df_comparison = get_hk_info_em(symbol_f)
+    else:
+        _, df_comparison = get_a_info_em(symbol_f)
 
     return df_comparison

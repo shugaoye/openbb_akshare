@@ -62,22 +62,35 @@ class AKShareCompanyNewsFetcher(
         # pylint: disable=import-outside-toplevel
         import asyncio  # noqa
         from openbb_core.provider.utils.errors import EmptyDataError
-        from openbb_core.provider.utils.helpers import get_requests_session
         import akshare as ak
+        from mysharelib.tools import normalize_symbol
 
         results: list = []
         symbols = query.symbol.split(",")  # type: ignore
         async def get_one(symbol):
-            data = ak.stock_news_em(symbol)
-            for idx, d in data.iterrows():
-                new_content: dict = {}
-                new_content["text"] = d["新闻内容"]
-                new_content["url"] = d["新闻链接"]
-                new_content["source"] = d["文章来源"]
-                new_content["title"] = d["新闻标题"]
-                new_content["date"] = d["发布时间"]
+            from mysharelib.sina.scrape_hk_stock_news import scrape_hk_stock_news
 
-                results.append(new_content)
+            symbol_b, _, market = normalize_symbol(symbol)
+            if market == "HK":
+                data = scrape_hk_stock_news(symbol_b)
+                if data is not None:
+                    for d in data.to_dict(orient='records'):
+                        new_content: dict = {}
+                        new_content["date"] = d["date"]
+                        new_content["title"] = d["title"]
+                        new_content["url"] = d["url"]
+                        results.append(new_content)
+            else:
+                data = ak.stock_news_em(symbol)
+                for idx, d in data.iterrows():
+                    new_content: dict = {}
+                    new_content["text"] = d["新闻内容"]
+                    new_content["url"] = d["新闻链接"]
+                    new_content["source"] = d["文章来源"]
+                    new_content["title"] = d["新闻标题"]
+                    new_content["date"] = d["发布时间"]
+
+                    results.append(new_content)
 
         tasks = [get_one(symbol) for symbol in symbols]
 
