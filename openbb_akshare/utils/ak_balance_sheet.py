@@ -44,8 +44,8 @@ def ak_stock_balance_sheet(symbol: str,
         symbol_em = f"{market}{symbol_b}"
 
         if period == "annual":
-            return ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em).head(limit)
+            return ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
         elif period == "quarter":
-            return ak.stock_balance_sheet_by_report_em(symbol=symbol_em).head(limit)
+            return ak.stock_balance_sheet_by_report_em(symbol=symbol_em)
         else:
             raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")

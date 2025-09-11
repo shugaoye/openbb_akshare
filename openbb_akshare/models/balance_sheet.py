@@ -103,7 +103,7 @@ class AKShareBalanceSheetFetcher(
         api_key = credentials.get("akshare_api_key") if credentials else ""
         # pylint: disable=import-outside-toplevel
         em_df = get_data(query.symbol, query.period, query.use_cache, api_key=api_key, limit=query.limit)
-        return em_df.to_dict(orient="records")
+        return em_df.head(query.limit).to_dict(orient="records")
 
     @staticmethod
     def transform_data(
