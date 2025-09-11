@@ -25,4 +25,8 @@ def test_cash_flow(symbol, period_t, default_provider):
     assert not cash_flow_df.empty
     assert len(cash_flow_df) == 3
 
-
+def test_balance_sheet_hk(default_provider):
+    symbol_hk = "01088"
+    balance_df = obb.equity.fundamental.balance(symbol=symbol_hk, period="annual", limit=7, use_cache=False,provider=default_provider).to_dataframe()
+    assert not balance_df.empty
+    assert len(balance_df) == 7
