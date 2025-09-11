@@ -9,6 +9,12 @@ from datetime import (
 from typing import Any, Dict, List, Literal, Optional
 
 from openbb_core.provider.abstract.fetcher import Fetcher
+import logging
+from openbb_akshare import project_name
+from mysharelib.tools import setup_logger
+
+setup_logger(project_name)
+logger = logging.getLogger(__name__)
 from openbb_core.provider.standard_models.income_statement import (
     IncomeStatementData,
     IncomeStatementQueryParams,
@@ -98,8 +104,9 @@ class AKShareIncomeStatementFetcher(
         **kwargs: Any,
     ) -> List[Dict]:
         """Return the raw data from the AKShare endpoint."""
+        api_key = credentials.get("akshare_api_key") if credentials else ""
 
-        em_df = get_data(query.symbol, query.period, query.use_cache)
+        em_df = get_data(query.symbol, query.period, query.use_cache, api_key=api_key, limit=query.limit)
 
         if query.limit is None:
             return em_df.to_dict(orient="records")
@@ -116,21 +123,15 @@ class AKShareIncomeStatementFetcher(
             result.pop("cik", None)
         return [AKShareIncomeStatementData.model_validate(d) for d in data]
 
-def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
+def get_data(symbol: str, period: Literal["annual", "quarter"] = "annual", use_cache: bool = True, api_key:str="", limit:int = 5) -> pd.DataFrame:
     from openbb_akshare import project_name
     from mysharelib.blob_cache import BlobCache
     cache = BlobCache(table_name="income_statement", project=project_name)
-    return cache.load_cached_data(symbol, period, use_cache, get_income_statement)
+    logger.info(f"Fetching income statement data for {symbol} with limit {limit} and use_cache={use_cache}")
+    return cache.load_cached_data(symbol, period, use_cache, get_income_statement, api_key, limit)
 
-def get_income_statement(symbol: str, period: str = "annual", api_key : Optional[str] = "") -> pd.DataFrame:
-    import akshare as ak
-    from openbb_akshare.utils.helpers import normalize_symbol
-    symbol_b, symbol_f, market = normalize_symbol(symbol)
-    symbol_em = f"{market}{symbol_b}"
+def get_income_statement(symbol: str, period: Literal["annual", "quarter"] = "annual", api_key : Optional[str] = "", limit:int = 5) -> pd.DataFrame:
+    from openbb_akshare.utils.ak_income_statement import ak_stock_income_statement
 
-    if period == "annual":
-        return ak.stock_profit_sheet_by_yearly_em(symbol=symbol_em)
-    elif period == "quarter":
-        return ak.stock_profit_sheet_by_report_em(symbol=symbol_em)
-    else:
-        raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")
+    logger.info(f"Getting income statement data for {symbol} with limit {limit}")
+    return ak_stock_income_statement(symbol, limit, period)
