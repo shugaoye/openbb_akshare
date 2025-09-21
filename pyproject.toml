@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openbb-akshare"
-version = "0.9.21"
+version = "0.9.23"
 description = "AKShare extension for OpenBB"
 authors = ["Roger Ye <shugaoye@yahoo.com>"]
 license = "AGPL-3.0-only"
@@ -11,7 +11,7 @@ packages = [{ include = "openbb_akshare" }]
 python = ">=3.9.21,<3.13"
 akshare = "1.17.39"
 openbb-core = { version = "^1.4.7" }
-mysharelib = "^0.8.11"
+mysharelib = "^0.9.0"
 ipywidgets = "^8.1.7"
 
 [tool.poetry.group.dev.dependencies]
