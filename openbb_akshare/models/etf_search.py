@@ -3,12 +3,14 @@
 # pylint: disable=unused-argument
 
 from typing import Any, Dict, List, Optional
+from openbb_core.provider.abstract.data import Data
 from openbb_core.provider.abstract.fetcher import Fetcher
+from openbb_core.provider.abstract.query_params import QueryParams
 from openbb_core.provider.utils.errors import EmptyDataError
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 
-class AKShareEtfSearchQueryParams(BaseModel):
+class AKShareEtfSearchQueryParams(QueryParams):
     """AKShare ETF Search Query."""
 
     query: Optional[str] = Field(
@@ -24,7 +26,7 @@ class AKShareEtfSearchQueryParams(BaseModel):
     )
 
 
-class AKShareEtfSearchData(BaseModel):
+class AKShareEtfSearchData(Data):
     """AKShare ETF Search Data."""
 
     symbol: str = Field(description="ETF symbol/code.")
