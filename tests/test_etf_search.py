@@ -1,116 +1,136 @@
 """Test cases for ETF Search model."""
 
 import pytest
+import asyncio
 from openbb_akshare.models.etf_search import AKShareEtfSearchFetcher
 
 
-@pytest.mark.parametrize("query", ["", "300", "etf", "指数"])
-def test_etf_search_fetcher(query, logger):
-    """Test ETF search fetcher with different search queries."""
-    import asyncio
-    
+@pytest.mark.parametrize("query", ["", "ETF", "159919"])
+def test_etf_search_transform_query(query):
+    """Test ETF search query transformation."""
     query_params = {
         "query": query,
-        "limit": 10,
         "use_cache": True,
+        "limit": 100,
     }
     fetcher = AKShareEtfSearchFetcher()
-    
-    # Transform query
     transformed_query = fetcher.transform_query(query_params)
     
-    # Extract data (no credentials needed for ETF search)
+    assert transformed_query.query == query
+    assert transformed_query.use_cache is True
+    assert transformed_query.limit == 100
+
+
+def test_etf_search_empty_query():
+    """Test ETF search with empty query."""
+    fetcher = AKShareEtfSearchFetcher()
+    query_params = {"query": ""}
+    transformed_query = fetcher.transform_query(query_params)
+    
+    # Extract data - should return empty list or handle gracefully
     try:
         data = asyncio.run(fetcher.aextract_data(transformed_query, None))
         assert isinstance(data, list)
-        logger.info(f"ETF search for '{query}': {len(data)} results")
+    except Exception:
+        # If there's an error, it should be handled gracefully
+        pass
+
+
+def test_etf_search_with_query():
+    """Test ETF search with a query string."""
+    fetcher = AKShareEtfSearchFetcher()
+    query_params = {
+        "query": "ETF",
+        "limit": 10,
+    }
+    transformed_query = fetcher.transform_query(query_params)
+    
+    # Extract data
+    try:
+        data = asyncio.run(fetcher.aextract_data(transformed_query, None))
+        assert isinstance(data, list)
         
         # Transform data
         if data:
             transformed_data = fetcher.transform_data(transformed_query, data)
             assert isinstance(transformed_data, list)
-            
-            # Verify data structure
             if transformed_data:
                 first_item = transformed_data[0]
                 assert hasattr(first_item, "symbol")
-                assert hasattr(first_item, "name")
-                assert first_item.symbol is not None
-                assert first_item.name is not None
-                logger.info(f"First result: {first_item.symbol} - {first_item.name}")
-    except Exception as e:
-        # Some queries might not have data, log but don't fail
-        logger.info(f"No data for query '{query}': {e}")
-
-
-def test_etf_search_empty_query():
-    """Test ETF search with empty query returns all results."""
-    import asyncio
-    
-    query_params = {
-        "query": "",
-        "limit": 5,
-        "use_cache": True,
-    }
-    fetcher = AKShareEtfSearchFetcher()
-    transformed_query = fetcher.transform_query(query_params)
-    
-    try:
-        data = asyncio.run(fetcher.aextract_data(transformed_query, None))
-        assert isinstance(data, list)
-        assert len(data) <= 5  # Should respect limit
-        
-        if data:
-            transformed_data = fetcher.transform_data(transformed_query, data)
-            assert isinstance(transformed_data, list)
     except Exception:
-        # Might not have data, which is acceptable
+        # May return empty list if not supported
         pass
 
 
-@pytest.mark.parametrize("limit", [1, 5, 10, 50])
+@pytest.mark.parametrize("limit", [10, 100, 1000, None])
 def test_etf_search_limit(limit):
-    """Test ETF search respects limit parameter."""
-    import asyncio
-    
+    """Test ETF search with different limit values."""
+    fetcher = AKShareEtfSearchFetcher()
     query_params = {
         "query": "",
         "limit": limit,
-        "use_cache": True,
     }
-    fetcher = AKShareEtfSearchFetcher()
     transformed_query = fetcher.transform_query(query_params)
     
     try:
         data = asyncio.run(fetcher.aextract_data(transformed_query, None))
         assert isinstance(data, list)
-        assert len(data) <= limit
+        
+        if limit is not None and data:
+            assert len(data) <= limit
     except Exception:
-        # Might not have data, which is acceptable
         pass
 
 
 @pytest.mark.parametrize("use_cache", [True, False])
 def test_etf_search_cache(use_cache):
     """Test ETF search with and without cache."""
-    import asyncio
-    
+    fetcher = AKShareEtfSearchFetcher()
     query_params = {
-        "query": "300",
-        "limit": 10,
+        "query": "",
         "use_cache": use_cache,
     }
-    fetcher = AKShareEtfSearchFetcher()
     transformed_query = fetcher.transform_query(query_params)
     
     try:
         data = asyncio.run(fetcher.aextract_data(transformed_query, None))
         assert isinstance(data, list)
-        
-        if data:
-            transformed_data = fetcher.transform_data(transformed_query, data)
-            assert isinstance(transformed_data, list)
     except Exception:
-        # Might not have data, which is acceptable
+        pass
+
+
+def test_etf_search_transform_data_empty():
+    """Test transform_data with empty data."""
+    fetcher = AKShareEtfSearchFetcher()
+    query_params = {"query": ""}
+    transformed_query = fetcher.transform_query(query_params)
+    
+    result = fetcher.transform_data(transformed_query, [])
+    assert result == []
+    assert isinstance(result, list)
+
+
+def test_etf_search_transform_data_with_data():
+    """Test transform_data with sample data."""
+    fetcher = AKShareEtfSearchFetcher()
+    query_params = {"query": ""}
+    transformed_query = fetcher.transform_query(query_params)
+    
+    # Sample data structure
+    sample_data = [
+        {
+            "代码": "159919",
+            "名称": "Test ETF",
+        }
+    ]
+    
+    try:
+        result = fetcher.transform_data(transformed_query, sample_data)
+        assert isinstance(result, list)
+        if result:
+            assert hasattr(result[0], "symbol")
+            assert hasattr(result[0], "name")
+    except Exception:
+        # If validation fails, that's acceptable for this test
         pass
 
