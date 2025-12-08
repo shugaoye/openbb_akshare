@@ -48,6 +48,7 @@ def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
     listed_date = equity_info.get("listed_date")
    
     if listed_date is not None:
+        logger.info(f"Listing date for {symbol} is {listed_date}.")
         return pd.to_datetime(listed_date, unit='ms').iloc[0].date()
     
     return (datetime.now() - timedelta(days=365)).date()
@@ -61,8 +62,9 @@ def check_cache(symbol: str,
     Check if the cache contains the latest data for the given symbol.
     """
     from mysharelib.tools import last_closing_day
+    from mysharelib.em.orginfo import get_listing_date
     
-    start = get_list_date(symbol)
+    start = get_listing_date(symbol)
     end = last_closing_day()
     # Please note that the format of the date string must be "YYYY-MM-DD" in database.
     cache_df = cache.fetch_date_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
@@ -148,7 +150,7 @@ def ak_download(
 
     # If not in cache, download data
     # Download data using AKShare
-    data_util_today_df = ak_download_without_cache(symbol_b, period=period, api_key=api_key, start_date=start, end_date=end)
+    data_util_today_df = ak_download_without_cache(symbol_b, period=period, api_key=api_key, start_date=start_dt.strftime("%Y%m%d"), end_date=end_dt.strftime("%Y%m%d"))
     cache.write_dataframe(data_util_today_df)
     
     return cache.fetch_date_range(start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d"))
