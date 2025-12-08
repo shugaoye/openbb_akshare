@@ -69,6 +69,7 @@ class AKShareCompanyNewsFetcher(
         symbols = query.symbol.split(",")  # type: ignore
         async def get_one(symbol):
             from mysharelib.sina.scrape_hk_stock_news import scrape_hk_stock_news
+            from mysharelib.em.stock_info_em import stock_info_em
 
             symbol_b, _, market = normalize_symbol(symbol)
             if market == "HK":
@@ -81,12 +82,10 @@ class AKShareCompanyNewsFetcher(
                         new_content["url"] = d["url"]
                         results.append(new_content)
             else:
-                data = ak.stock_news_em(symbol)
+                data = stock_info_em(symbol)
                 for idx, d in data.iterrows():
                     new_content: dict = {}
-                    new_content["text"] = d["新闻内容"]
                     new_content["url"] = d["新闻链接"]
-                    new_content["source"] = d["文章来源"]
                     new_content["title"] = d["新闻标题"]
                     new_content["date"] = d["发布时间"]
 
