@@ -47,6 +47,9 @@ class AKShareKeyMetricsData(KeyMetricsData):
     """AKShare Key Metrics Data."""
 
     __alias_dict__ = {
+        "symbol": "证券代码",
+        "fiscal_period": "报告类型",
+        "period_ending": "报告日期",
         "market_cap": "流通值",
         "pe_ratio": "市盈率(动)",
     }
