@@ -35,7 +35,7 @@ def get_data(market):
     if market == "HK":
         # Get Hong Kong stock market data
         df = ak.stock_hk_spot_em()
-    elif market == "SH":
+    elif market == "SH" or market == "SS":
         df = ak.stock_sh_a_spot_em()
     elif market == "SZ":
         df = ak.stock_sz_a_spot_em()
@@ -52,7 +52,7 @@ def get_data(market):
 def get_exchange_name(market):
     if market == "HK":
         return "HKEX"
-    elif market == "SH":
+    elif market == "SH" or market == "SS":
         return "SSE"
     elif market == "SZ":
         return "SZSE"
@@ -64,7 +64,7 @@ def get_exchange_name(market):
 def get_primary_key(market):
     if market == "HK":
         return "equity_quote_HK"
-    elif market == "SH":
+    elif market == "SH" or market == "SS":
         return "equity_quote_SH"
     elif market == "SZ":
         return "equity_quote_SZ"
