@@ -50,6 +50,18 @@ class AKShareCompanyNewsFetcher(
         Here we can pre-process the query parameters and add any extra parameters that
         will be used inside the extract_data method.
         """
+        # Normalize common aliases to `symbol` to improve compatibility with callers
+        if not params.get("symbol"):
+            for alias in ("query", "symbols", "ticker", "tickers"):
+                if alias in params and params.get(alias):
+                    params["symbol"] = params[alias]
+                    break
+
+        # If symbol provided as a list, join into comma-separated string
+        symbol_val = params.get("symbol")
+        if isinstance(symbol_val, (list, tuple)):
+            params["symbol"] = ",".join(str(s) for s in symbol_val if s)
+
         return AKshareCompanyNewsQueryParams(**params)
 
     @staticmethod
