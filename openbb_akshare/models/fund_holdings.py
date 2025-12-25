@@ -6,6 +6,7 @@ from datetime import (
     date as dateType,
     datetime,
 )
+import re
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
@@ -38,6 +39,51 @@ class AkshareFundHoldingsQueryParams(FundHoldingsQueryParams):
         default=True,
         description="Whether or not to use cache. If True, cache will store for two days.",
     )
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def validate_date_format(cls, v):
+        """Accept YYYY-MM-DD strings or date objects; reject other formats with a clear message."""
+        if v is None:
+            return v
+        if isinstance(v, dateType):
+            return v
+        s = str(v).strip()
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
+            raise ValueError("Invalid 'date' format. Expected YYYY-MM-DD (e.g. 2024-01-01).")
+        return s
+
+    @field_validator("symbol", mode="before", check_fields=False)
+    @classmethod
+    def normalize_symbol(cls, v):
+        """Accept Yahoo-style fund symbols and normalize to the 6-digit fund code.
+
+        Examples accepted:
+        - 000001.OF
+        - 000001
+        - OF000001
+        """
+        if v is None:
+            raise ValueError("'symbol' is required. Example: 000001.OF")
+        raw = str(v).strip().upper()
+        if not raw:
+            raise ValueError("'symbol' cannot be empty. Example: 000001.OF")
+        raw = raw.split(",")[0].strip()
+
+        # Normalize suffix/prefix
+        raw = raw.replace(".OF", "")
+        raw = raw.replace(".SS", "")
+        raw = raw.replace(".SH", "")
+        raw = raw.replace(".SZ", "")
+        raw = raw.replace(".BJ", "")
+        if raw.startswith(("OF", "SH", "SZ", "BJ")):
+            raw = raw[2:]
+
+        if not re.fullmatch(r"\d{6}", raw):
+            raise ValueError(
+                "Invalid 'symbol' format for fund holdings. Use Yahoo-style like '000001.OF' (or raw 6 digits)."
+            )
+        return raw
 
 
 class AkshareFundHoldingsData(FundHoldingsData):
@@ -97,10 +143,6 @@ class AkshareFundHoldingsFetcher(
     @staticmethod
     def transform_query(params: Dict[str, Any]) -> AkshareFundHoldingsQueryParams:
         """Transform the query."""
-        try:
-            params["symbol"] = params["symbol"].split(",")[0].split(".")[0]
-        except Exception:
-            raise Exception("Please enter a valid symbol")
         return AkshareFundHoldingsQueryParams(**params)
 
     @staticmethod
@@ -110,19 +152,29 @@ class AkshareFundHoldingsFetcher(
         **kwargs: Any,
     ) -> List[Dict]:
         """Return the raw data from Akshare."""
-        try:
-            if isinstance(query.date, str):
+        if isinstance(query.date, str):
+            try:
                 query.date = datetime.strptime(query.date, "%Y-%m-%d")
+            except ValueError as e:
+                raise ValueError(
+                    f"Invalid 'date' format: '{query.date}'. Expected YYYY-MM-DD (e.g. 2024-01-01)."
+                ) from e
+
+        try:
             fund_portfolio_hold_em_df = ak_fund_portfolio_hold_em(
                 symbol=query.symbol,
                 year=str(query.date.year),
                 db_path="etf_fund_holdings",
                 use_cache=query.use_cache,
             )
-        except Exception:
-            raise Exception(
-                f"Error occurred while fetching data for symbol: {query.symbol},Akshare don't support this symbol"
-            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to fetch fund holdings for symbol '{query.symbol}'. If you passed a Yahoo symbol like 000001.OF, it should be supported. Underlying error: {e}"
+            ) from e
+
+        if fund_portfolio_hold_em_df is None or getattr(fund_portfolio_hold_em_df, "empty", True):
+            raise EmptyDataError(f"No fund holdings data found for symbol '{query.symbol}' and date '{query.date}'.")
+
         fund_portfolio_hold_em_df.drop(["股票代码", "序号", "code"], axis=1, inplace=True)
 
         return fund_portfolio_hold_em_df.to_dict(orient="records")

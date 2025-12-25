@@ -2,10 +2,24 @@ import pytest
 import pandas as pd
 import sqlite3
 from pathlib import Path
+import gc
+import time
 from datetime import datetime, timezone
 from mysharelib.table_cache import TableCache
 from openbb_akshare.utils.fetch_equity_info import EQUITY_INFO_SCHEMA
 from openbb_akshare import project_name
+
+
+def _safe_unlink(path: Path, attempts: int = 5, delay_s: float = 0.1) -> None:
+    """Best-effort unlink for Windows where SQLite file locks can linger briefly."""
+    for attempt in range(attempts):
+        try:
+            path.unlink()
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(delay_s)
 
 @pytest.fixture
 def sample_equity_info_df():
@@ -54,15 +68,20 @@ def test_db_path(tmp_path):
 
 @pytest.fixture
 def equity_cache(test_db_path):
-    print(test_db_path)
     cache = TableCache(EQUITY_INFO_SCHEMA, project=project_name, db_path=test_db_path, table_name="equity_info", primary_key="symbol")
     yield cache
+    try:
+        cache.close()
+    except Exception:
+        pass
+    gc.collect()
     if Path(test_db_path).exists():
-        Path(test_db_path).unlink()
+        _safe_unlink(Path(test_db_path))
 
 def test_db_creation(test_db_path):
     cache = TableCache(EQUITY_INFO_SCHEMA, project=project_name, db_path=test_db_path, table_name="equity_info", primary_key="symbol")
     assert Path(test_db_path).exists()
+    cache.close()
 
 def test_write_and_read_dataframe(sample_equity_info_df, equity_cache):
     test_data = sample_equity_info_df

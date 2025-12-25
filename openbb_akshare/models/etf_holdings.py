@@ -14,6 +14,8 @@ from openbb_core.provider.standard_models.etf_holdings import (
 )
 from openbb_core.provider.utils.descriptions import QUERY_DESCRIPTIONS
 from openbb_core.provider.utils.errors import EmptyDataError
+import re
+
 from pydantic import Field, field_validator
 
 
@@ -38,6 +40,39 @@ class AkshareEtfHoldingsQueryParams(EtfHoldingsQueryParams):
         default=True,
         description="Whether or not to use cache. If True, cache will store for two days.",
     )
+
+    @field_validator("symbol", mode="before", check_fields=False)
+    @classmethod
+    def normalize_symbol(cls, v):
+        """Accept Yahoo-style symbols and normalize to the 6-digit fund code.
+
+        Examples accepted:
+        - 510300.SS / 510300.SH / 159915.SZ
+        - SH510300 / SZ159915
+        - 510300
+        """
+        if v is None:
+            raise ValueError("'symbol' is required. Example: 510300.SS")
+        raw = str(v).strip().upper()
+        if not raw:
+            raise ValueError("'symbol' cannot be empty. Example: 510300.SS")
+        raw = raw.split(",")[0].strip()
+
+        # Strip common prefixes/suffixes
+        raw = raw.replace(".SS", ".SH")
+        raw = raw.replace(".SH", "")
+        raw = raw.replace(".SZ", "")
+        raw = raw.replace(".BJ", "")
+        raw = raw.replace(".OF", "")
+        if raw.startswith(("SH", "SZ", "BJ", "OF")):
+            raw = raw[2:]
+
+        m = re.fullmatch(r"\d{6}", raw)
+        if not m:
+            raise ValueError(
+                "Invalid 'symbol' format for ETF holdings. Use Yahoo-style like '510300.SS' or '159915.SZ' (or raw 6 digits)."
+            )
+        return raw
 
 
 class AkshareEtfHoldingsData(EtfHoldingsData):
@@ -97,10 +132,6 @@ class AkshareEtfHoldingsFetcher(
     @staticmethod
     def transform_query(params: Dict[str, Any]) -> AkshareEtfHoldingsQueryParams:
         """Transform the query."""
-        try:
-            params["symbol"] = params["symbol"].split(",")[0].split(".")[0]
-        except:
-            raise Exception("Please enter a valid symbol")
         return AkshareEtfHoldingsQueryParams(**params)
 
     @staticmethod
@@ -113,14 +144,18 @@ class AkshareEtfHoldingsFetcher(
         try:
             fund_portfolio_hold_em_df = ak_fund_portfolio_hold_em(
                 symbol=query.symbol,
-                year=query.year,
+                year=str(query.year),
                 db_path="etf_fund_holdings",
                 use_cache=query.use_cache,
             )
-        except:
-            raise Exception(
-                f"Error occurred while fetching data for symbol: {query.symbol},Akshare don't support this symbol"
-            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to fetch ETF holdings for symbol '{query.symbol}'. If you passed a Yahoo symbol like 510300.SS, it should be supported. Underlying error: {e}"
+            ) from e
+
+        if fund_portfolio_hold_em_df is None or getattr(fund_portfolio_hold_em_df, "empty", True):
+            raise EmptyDataError(f"No ETF holdings data found for symbol '{query.symbol}'.")
+
         fund_portfolio_hold_em_df.drop(["股票代码", "序号", "code"], axis=1, inplace=True)
         fund_portfolio_hold_em_df = fund_portfolio_hold_em_df[fund_portfolio_hold_em_df["季度"].str.contains(str(query.quarter) + "季度")]
         return fund_portfolio_hold_em_df.to_dict(orient="records")

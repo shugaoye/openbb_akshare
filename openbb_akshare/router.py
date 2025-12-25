@@ -45,10 +45,7 @@ async def company_facts(symbol: str = "600325") -> OBBject[dict]:
     from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
     from mysharelib.tools import normalize_symbol
 
-    user_setting = UserService.read_from_file()
-    credentials = user_setting.credentials
-    api_key = credentials.akshare_api_key.get_secret_value()
-    df = fetch_equity_info(symbol, api_key=api_key, use_cache=True)
+    df = fetch_equity_info(symbol, api_key=None, use_cache=True)
     df.set_index('symbol', inplace=True)
     
     _, symbol_f, _ = normalize_symbol(symbol)

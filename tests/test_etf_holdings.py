@@ -4,7 +4,7 @@ import pytest
 from openbb_akshare.models.etf_holdings import AkshareEtfHoldingsFetcher
 
 
-@pytest.mark.parametrize("symbol", ["159919", "510300", "159915"])
+@pytest.mark.parametrize("symbol", ["159919", "510300", "159915", "510300.SS", "159915.SZ", "510300.SH"])
 @pytest.mark.parametrize("year", ["2024", "2023"])
 @pytest.mark.parametrize("quarter", ["1", "2", "3", "4"])
 def test_etf_holdings_fetcher(symbol, year, quarter, logger):
@@ -41,6 +41,14 @@ def test_etf_holdings_fetcher(symbol, year, quarter, logger):
     except Exception as e:
         # Some quarters might not have data, which is acceptable
         logger.info(f"No data for {symbol} (Year: {year}, Quarter: {quarter}): {e}")
+
+
+def test_etf_holdings_invalid_symbol_format():
+    """Yahoo-style is supported, but clearly invalid formats should raise a helpful error."""
+    fetcher = AkshareEtfHoldingsFetcher()
+    with pytest.raises(Exception) as exc:
+        fetcher.transform_query({"symbol": "AAPL"})
+    assert "Invalid 'symbol' format" in str(exc.value)
 
 
 @pytest.mark.parametrize("symbol", ["159919", "510300"])

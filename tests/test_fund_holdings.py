@@ -4,7 +4,7 @@ import pytest
 from openbb_akshare.models.fund_holdings import AkshareFundHoldingsFetcher
 
 
-@pytest.mark.parametrize("symbol", ["000001", "000002", "000003"])
+@pytest.mark.parametrize("symbol", ["000001", "000002", "000003", "000001.OF", "OF000001"])
 @pytest.mark.parametrize("date", ["2024-01-01", "2023-01-01", "2024-06-01"])
 def test_fund_holdings_fetcher(symbol, date, logger):
     """Test fund holdings fetcher directly with different symbols and dates."""
@@ -39,6 +39,14 @@ def test_fund_holdings_fetcher(symbol, date, logger):
     except Exception as e:
         # Some dates might not have data, which is acceptable
         logger.info(f"No data for {symbol} (Date: {date}): {e}")
+
+
+def test_fund_holdings_invalid_date_format():
+    """Ensure invalid dates fail with a clear message."""
+    fetcher = AkshareFundHoldingsFetcher()
+    with pytest.raises(Exception) as exc:
+        fetcher.transform_query({"symbol": "000001.OF", "date": "20240101"})
+    assert "Invalid 'date' format" in str(exc.value)
 
 
 @pytest.mark.parametrize("symbol", ["000001", "000002"])

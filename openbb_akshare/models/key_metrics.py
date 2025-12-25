@@ -72,8 +72,6 @@ class AKShareKeyMetricsFetcher(
         **kwargs: Any,
     ) -> List[Dict]:
         """Return the raw data from the AKShare endpoint."""
-        api_key = credentials.get("akshare_api_key") if credentials else ""
-
         symbols = query.symbol.split(",")
         results: List = []
 
@@ -84,7 +82,7 @@ class AKShareKeyMetricsFetcher(
 
             results.append(df_base['数值'].to_dict())
 
-        await asyncio.gather(*[get_one(symbol, api_key) for symbol in symbols])
+        await asyncio.gather(*[get_one(symbol, None) for symbol in symbols])
 
         if not results:
             raise EmptyDataError(f"No data found for given symbols -> {query.symbol}.")

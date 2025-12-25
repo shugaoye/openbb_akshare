@@ -32,7 +32,7 @@ EQUITY_HISTORY_SCHEMA = {
     "amount": "REAL"
 }
 
-def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
+def get_list_date(symbol: str, api_key: Optional[str] = "") -> dateType:
     """
     Retrieves the listing date for a given stock symbol.
 
@@ -42,14 +42,21 @@ def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
     Returns:
         Optional[str]: The listing date in 'YYYY-MM-DD' format, or None if not found.
     """
-    from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
+    symbol_b, _, market = normalize_symbol(symbol)
 
-    equity_info = fetch_equity_info(symbol, api_key=api_key)
-    listed_date = equity_info.get("listed_date")
-   
-    if listed_date is not None:
-        return pd.to_datetime(listed_date, unit='ms').iloc[0].date()
-    
+    # Prefer tokenless Eastmoney source for A-shares.
+    if market in {"SH", "SZ", "BJ"}:
+        try:
+            info_df = ak.stock_individual_info_em(symbol=symbol_b)
+            listed = (
+                info_df.loc[info_df["item"] == "上市时间", "value"].astype(str).iloc[0]
+            )
+            # Eastmoney returns YYYYMMDD.
+            return datetime.strptime(listed, "%Y%m%d").date()
+        except Exception:
+            return (datetime.now() - timedelta(days=365)).date()
+
+    # For other markets, fall back to a sane default.
     return (datetime.now() - timedelta(days=365)).date()
 
 def check_cache(symbol: str, 
@@ -318,18 +325,31 @@ def get_hk_dividends(
     return dividends
 
 def convert_stock_code_format(symbol):
-    # 将.SS转换为SH前缀 .SZ后缀转换为SZ前缀
-    # 如果没有后缀，根据代码判断市场：6开头为SH，0/3开头为SZ，8开头为BJ
-    symbol = symbol.split(",")
+    """Convert Yahoo-style symbols to Akshare/Eastmoney-style prefixes.
+
+    Accepts common Yahoo formats:
+    - CN: 600036.SS / 600036.SH / 000001.SZ / 830001.BJ
+    - Funds: 000001.OF
+    - Already prefixed: SH600036 / SZ000001 / BJ830001 / OF000001
+
+    Returns:
+        Comma-separated symbols with prefixes (e.g. SH600036,SZ000001).
+    """
+
+    # 将 .SS/.SH 转换为 SH 前缀；.SZ -> SZ；.BJ -> BJ；.OF -> OF
+    # 如果没有后缀，根据代码判断市场：6/9 开头为 SH，0/3 开头为 SZ，8/4 开头为 BJ
+    symbol = str(symbol).upper().split(",")
     symbol = [s.strip() for s in symbol if s.strip()]
     converted_symbol = []
     for s in symbol:
-        if ".SS" in s:
-            s = "SH" + s.replace(".SS", "")
-        elif ".SZ" in s:
-            s = "SZ" + s.replace(".SZ", "")
-        elif ".OF" in s:
-            s = "OF" + s.replace(".OF", "")
+        if s.endswith(".SS") or s.endswith(".SH"):
+            s = "SH" + s.split(".")[0]
+        elif s.endswith(".SZ"):
+            s = "SZ" + s.split(".")[0]
+        elif s.endswith(".BJ"):
+            s = "BJ" + s.split(".")[0]
+        elif s.endswith(".OF"):
+            s = "OF" + s.split(".")[0]
         elif s.startswith("SH") or s.startswith("SZ") or s.startswith("BJ") or s.startswith("OF"):
             # 已经有前缀，不需要转换
             pass
