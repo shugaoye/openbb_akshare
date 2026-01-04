@@ -39,7 +39,7 @@ EQUITY_INFO_SCHEMA = {
 def serialize_dict_fields(d):
     return {k: json.dumps(v) if isinstance(v, dict) else v for k, v in d.items()}
 
-def fetch_equity_info(symbol: str, api_key: str, use_cache: bool = True) -> pd.DataFrame:
+def fetch_equity_info(symbol: str, api_key: str | None = None, use_cache: bool = True) -> pd.DataFrame:
     """
     Fetches detailed information about a specific equity symbol.
 
@@ -66,7 +66,8 @@ def fetch_equity_info(symbol: str, api_key: str, use_cache: bool = True) -> pd.D
     columns = list(EQUITY_INFO_SCHEMA.keys())
     equity_info = pd.DataFrame(columns=columns)
     try:
-        ak.stock.cons.xq_a_token=api_key
+        if api_key:
+            ak.stock.cons.xq_a_token = api_key
         if market == "HK":
             stock_individual_basic_info_hk_xq_df = ak.stock_individual_basic_info_hk_xq(symbol=symbol_b)
             hk_data = stock_individual_basic_info_hk_xq_df.set_index("item").T

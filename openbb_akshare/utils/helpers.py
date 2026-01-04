@@ -32,7 +32,7 @@ EQUITY_HISTORY_SCHEMA = {
     "amount": "REAL"
 }
 
-def get_list_date(symbol: str, api_key : Optional[str] = "") -> dateType:
+def get_list_date(symbol: str, api_key: Optional[str] = "") -> dateType:
     """
     Retrieves the listing date for a given stock symbol.
 
@@ -318,3 +318,77 @@ def get_hk_dividends(
         raise EmptyDataError(f"No dividend data found for {symbol}.")
 
     return dividends
+
+def convert_stock_code_format(symbol):
+    """Convert Yahoo-style symbols to Akshare/Eastmoney-style prefixes.
+
+    Accepts common Yahoo formats:
+    - CN: 600036.SS / 600036.SH / 000001.SZ / 830001.BJ
+    - Funds: 000001.OF
+    - Already prefixed: SH600036 / SZ000001 / BJ830001 / OF000001
+
+    Returns:
+        Comma-separated symbols with prefixes (e.g. SH600036,SZ000001).
+    """
+
+    # 将 .SS/.SH 转换为 SH 前缀；.SZ -> SZ；.BJ -> BJ；.OF -> OF
+    # 如果没有后缀，根据代码判断市场：6/9 开头为 SH，0/3 开头为 SZ，8/4 开头为 BJ
+    symbol = str(symbol).upper().split(",")
+    symbol = [s.strip() for s in symbol if s.strip()]
+    converted_symbol = []
+    for s in symbol:
+        if s.endswith(".SS") or s.endswith(".SH"):
+            s = "SH" + s.split(".")[0]
+        elif s.endswith(".SZ"):
+            s = "SZ" + s.split(".")[0]
+        elif s.endswith(".BJ"):
+            s = "BJ" + s.split(".")[0]
+        elif s.endswith(".OF"):
+            s = "OF" + s.split(".")[0]
+        elif s.startswith("SH") or s.startswith("SZ") or s.startswith("BJ") or s.startswith("OF"):
+            # 已经有前缀，不需要转换
+            pass
+        else:
+            # 根据代码开头判断市场
+            if s.startswith("6") or s.startswith("9"):
+                s = "SH" + s
+            elif s.startswith("0") or s.startswith("3"):
+                s = "SZ" + s
+            elif s.startswith("8") or s.startswith("4"):
+                s = "BJ" + s
+        converted_symbol.append(s)
+
+    return ",".join(converted_symbol)
+
+def ak_fund_portfolio_hold_em(
+    symbol: str, year: str, db_path: str, use_cache: bool = True
+) -> DataFrame:
+    """Fetch data with custom cache key."""
+    import akshare as ak
+    from openbb_akshare.utils.sqlite_cache import SQLiteCache
+    from openbb_core.app.utils import get_user_cache_directory
+
+    symbols_str = symbol + year
+    if use_cache:
+        cache_db_path = f"{get_user_cache_directory()}/ddb/{db_path}.db"
+        cache = SQLiteCache(
+            db_path=cache_db_path, expire=24 * 3600 * 2
+        )  # 创建缓存实例，缓存有效期为两天
+        cache.clear_expired()
+        df = cache.get(symbols_str)
+        if isinstance(df, DataFrame):
+            return df
+        else:
+            try:
+                df: DataFrame = ak.fund_portfolio_hold_em(symbol=symbol, date=year)
+            except Exception:
+                df = DataFrame()
+            cache.set(symbols_str, df)
+            return df
+    else:
+        # 如果不使用缓存，直接发起请求
+        try:
+            df: DataFrame = ak.fund_portfolio_hold_em(symbol=symbol, date=year)
+        except Exception:
+            df = DataFrame()
+        return df

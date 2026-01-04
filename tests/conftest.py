@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv
 import logging
 import pytest
 from mysharelib.tools import setup_logger, normalize_symbol
