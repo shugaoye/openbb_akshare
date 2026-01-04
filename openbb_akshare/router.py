@@ -13,45 +13,13 @@ from mysharelib.registry import register_widget
 
 router = Router(prefix="")
 
-@register_widget({
-    "name": "Company Facts",
-    "description": "Get key company information including name, CIK, market cap, total employees, website URL, and more.",
-    "category": "Equity",
-    "subcategory": "Company Info",
-    "type": "table",
-    "widgetId": "company_facts",
-    "endpoint": "company_facts",
-    "gridData": {
-        "w": 10,
-        "h": 12
-    },
-    "params": [
-        {
-            "type": "endpoint",
-            "paramName": "ticker",
-            "label": "Symbol",
-            "value": "600325",
-            "description": "Ticker to get company facts for (Free tier: AAPL, MSFT, TSLA)",
-            "optionsEndpoint": "/stock_tickers"
-        }
-    ]
-})
 @router.command(methods=["GET"])
-async def company_facts(symbol: str = "600325") -> OBBject[dict]:
+async def get_example(symbol: str = "AAPL") -> OBBject[dict]:
     """Get options data."""
-    import numpy as np
-    import pandas as pd
+    base_url = "https://www.cboe.com/education/tools/trade-optimizer/symbol-info"
 
-    from openbb_akshare.utils.fetch_equity_info import fetch_equity_info
-    from mysharelib.tools import normalize_symbol
-
-    df = fetch_equity_info(symbol, api_key=None, use_cache=True)
-    df.set_index('symbol', inplace=True)
-    
-    _, symbol_f, _ = normalize_symbol(symbol)
-    data = df.T.to_dict(orient="dict")[symbol_f]
-    
-    return OBBject(results=data)
+    response = requests.get(base_url + f"?symbol={symbol}", timeout=5).json()
+    return OBBject(results=response["details"])
 
 
 @router.command(methods=["POST"])

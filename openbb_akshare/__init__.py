@@ -13,6 +13,7 @@ from openbb_akshare.models.equity_quote import AKShareEquityQuoteFetcher
 from openbb_akshare.models.equity_historical import AKShareEquityHistoricalFetcher
 from openbb_akshare.models.equity_profile import AKShareEquityProfileFetcher
 from openbb_akshare.models.equity_screener import AKShareEquityScreenerFetcher
+from openbb_akshare.models.equity_search import AKShareEquitySearchFetcher
 from openbb_akshare.models.historical_dividends import AKShareHistoricalDividendsFetcher
 from openbb_akshare.models.income_statement import AKShareIncomeStatementFetcher
 from openbb_akshare.models.key_metrics import AKShareKeyMetricsFetcher
@@ -42,6 +43,7 @@ provider = Provider(
         "EquityHistorical": AKShareEquityHistoricalFetcher,
         "EquityInfo": AKShareEquityProfileFetcher,
         "EquityScreener": AKShareEquityScreenerFetcher,
+        "EquitySearch": AKShareEquitySearchFetcher,
         "HistoricalDividends": AKShareHistoricalDividendsFetcher,
         "IncomeStatement": AKShareIncomeStatementFetcher,
         "KeyMetrics": AKShareKeyMetricsFetcher,

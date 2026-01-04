@@ -13,6 +13,13 @@ from openbb_core.provider.standard_models.balance_sheet import (
 from openbb_core.provider.utils.descriptions import QUERY_DESCRIPTIONS
 from pydantic import Field, field_validator
 
+import logging
+from openbb_akshare import project_name
+from mysharelib.tools import setup_logger
+
+setup_logger(project_name)
+logger = logging.getLogger(__name__)
+
 
 class AKShareBalanceSheetQueryParams(BalanceSheetQueryParams):
     """AKShare Balance Sheet Query.
@@ -93,13 +100,10 @@ class AKShareBalanceSheetFetcher(
         **kwargs: Any,
     ) -> list[dict]:
         """Extract the data from the AKShare endpoints."""
+        api_key = credentials.get("akshare_api_key") if credentials else ""
         # pylint: disable=import-outside-toplevel
-        em_df = get_data(query.symbol, query.period, query.use_cache)
-
-        if query.limit is None:
-            return em_df.to_dict(orient="records")
-        else:
-            return em_df.head(query.limit).to_dict(orient="records")
+        em_df = get_data(query.symbol, query.period, query.use_cache, api_key=api_key, limit=query.limit)
+        return em_df.head(query.limit).to_dict(orient="records")
 
     @staticmethod
     def transform_data(
@@ -110,21 +114,15 @@ class AKShareBalanceSheetFetcher(
         """Transform the data."""
         return [AKShareBalanceSheetData.model_validate(d) for d in data]
 
-def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
+def get_data(symbol: str, period: Literal["annual", "quarter"] = "annual", use_cache: bool = True, api_key:str="", limit:int = 5) -> pd.DataFrame:
     from openbb_akshare import project_name
     from mysharelib.blob_cache import BlobCache
     cache = BlobCache(table_name="balance_sheet", project=project_name)
-    return cache.load_cached_data(symbol, period, use_cache, get_ak_data)
+    logger.info(f"Fetching balance sheet data for {symbol} with limit {limit} and use_cache={use_cache}")
+    return cache.load_cached_data(symbol, period, use_cache, get_ak_data, api_key, limit)
 
-def get_ak_data(symbol: str, period: str = "annual", api_key : Optional[str] = "") -> pd.DataFrame:
-    import akshare as ak
-    from openbb_akshare.utils.helpers import normalize_symbol
-    symbol_b, symbol_f, market = normalize_symbol(symbol)
-    symbol_em = f"{market}{symbol_b}"
+def get_ak_data(symbol: str, period: Literal["annual", "quarter"] = "annual", api_key : Optional[str] = "", limit:int = 5) -> pd.DataFrame:
+    from openbb_akshare.utils.ak_balance_sheet import ak_stock_balance_sheet
 
-    if period == "annual":
-        return ak.stock_balance_sheet_by_yearly_em(symbol=symbol_em)
-    elif period == "quarter":
-        return ak.stock_balance_sheet_by_report_em(symbol=symbol_em)
-    else:
-        raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")
+    logger.info(f"Getting balance sheet data for {symbol} with limit {limit}")
+    return ak_stock_balance_sheet(symbol, limit, period)

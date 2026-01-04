@@ -6,6 +6,12 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 from openbb_core.provider.abstract.fetcher import Fetcher
+import logging
+from openbb_akshare import project_name
+from mysharelib.tools import setup_logger
+
+setup_logger(project_name)
+logger = logging.getLogger(__name__)
 from openbb_core.provider.standard_models.cash_flow import (
     CashFlowStatementData,
     CashFlowStatementQueryParams,
@@ -94,7 +100,8 @@ class AKShareCashFlowStatementFetcher(
     ) -> list[dict]:
         """Extract the data from the AKShare endpoints."""
         # pylint: disable=import-outside-toplevel
-        em_df = get_data(query.symbol, query.period, query.use_cache)
+        api_key = credentials.get("akshare_api_key") if credentials else ""
+        em_df = get_data(query.symbol, query.period, query.use_cache, api_key=api_key, limit=query.limit)
 
         if query.limit is None:
             return em_df.to_dict(orient="records")
@@ -110,22 +117,15 @@ class AKShareCashFlowStatementFetcher(
         """Transform the data."""
         return [AKShareCashFlowStatementData.model_validate(d) for d in data]
 
-def get_data(symbol: str, period: str = "annual", use_cache: bool = True) -> pd.DataFrame:
+def get_data(symbol: str, period: Literal["annual", "quarter"] = "annual", use_cache: bool = True, api_key:str="", limit:int = 5) -> pd.DataFrame:
     from openbb_akshare import project_name
     from mysharelib.blob_cache import BlobCache
-
     cache = BlobCache(table_name="cash_flow", project=project_name)
-    return cache.load_cached_data(symbol, period, use_cache, get_ak_data)
+    logger.info(f"Fetching cash flow data for {symbol} with limit {limit} and use_cache={use_cache}")
+    return cache.load_cached_data(symbol, period, use_cache, get_ak_data, api_key, limit)
 
-def get_ak_data(symbol: str, period: str = "annual", api_key : Optional[str] = "") -> pd.DataFrame:
-    import akshare as ak
-    from openbb_akshare.utils.helpers import normalize_symbol
-    symbol_b, symbol_f, market = normalize_symbol(symbol)
-    symbol_em = f"{market}{symbol_b}"
+def get_ak_data(symbol: str, period: Literal["annual", "quarter"] = "annual", api_key : Optional[str] = "", limit:int = 5) -> pd.DataFrame:
+    from openbb_akshare.utils.ak_cash_flow import ak_stock_cash_flow
 
-    if period == "annual":
-        return ak.stock_cash_flow_sheet_by_yearly_em(symbol=symbol_em)
-    elif period == "quarter":
-        return ak.stock_cash_flow_sheet_by_report_em(symbol=symbol_em)
-    else:
-        raise ValueError("Invalid period. Please use 'annual' or 'quarter'.")
+    logger.info(f"Getting cash flow data for {symbol} with limit {limit}")
+    return ak_stock_cash_flow(symbol, limit, period)

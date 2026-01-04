@@ -27,7 +27,7 @@ def fetch_key_metrics(
     from mysharelib.blob_cache import BlobCache
 
     symbol_b, _, market = normalize_symbol(symbol)
-    if market not in ["SH", "SZ", "BJ"]:
+    if market not in ["SH", "SZ", "BJ", "HK"]:
         logger.warning("AKShare key metrics only support A shares.")
         return pd.DataFrame()
     cache = BlobCache(table_name="key_metrics", project=project_name)
@@ -43,9 +43,14 @@ def _get_key_metrics(
 ) -> pd.DataFrame:
     import akshare as ak
     from mysharelib.em.get_a_info_em import get_a_info_em
+    from mysharelib.em.get_hk_info_em import get_hk_info_em
 
     symbol_b, symbol_f, market = normalize_symbol(symbol)
-    df_base, df_comparison = get_a_info_em(symbol_f)
+    df_base = pd.DataFrame()
+    if market == "HK":
+        df_base, _ = get_hk_info_em(symbol_f)
+    else:
+        df_base, _ = get_a_info_em(symbol_f)
 
     if api_key:
         ak.stock.cons.xq_a_token = api_key

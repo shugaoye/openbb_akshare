@@ -2,9 +2,9 @@ import pytest
 import pandas as pd
 from openbb_akshare.utils.ak_key_metrics import fetch_key_metrics
 
-def test_fetch_key_metrics_invalid_symbol():
+def test_fetch_key_metrics_invalid_symbol(akshare_api_key):
     """Test fetch_key_metrics with invalid symbol returns empty DataFrame"""
-    result = fetch_key_metrics("INVALID")
+    result = fetch_key_metrics("INVALID", api_key=akshare_api_key)
     assert isinstance(result, pd.DataFrame)
     assert result.empty
 
@@ -35,17 +35,9 @@ def test_fetch_key_metrics_symbol_formats():
         df = fetch_key_metrics(symbol)
         assert isinstance(df, pd.DataFrame)
 
-def test_key_metrics():
-    try:
-        from openbb import obb  # type: ignore
-    except Exception as e:
-        pytest.skip(f"OpenBB import not available in this environment: {e}")
-
-    try:
-        df = obb.equity.fundamental.metrics(
-            symbol="000002,600036,430047", provider="akshare"
-        ).to_dataframe()
-    except Exception as e:
-        pytest.skip(f"OpenBB runtime API mismatch in this environment: {e}")
-
+@pytest.mark.parametrize("symbol", ["001979","600177","03988"])
+def test_key_metrics(symbol, default_provider, logger):
+    from openbb import obb
+    df = obb.equity.fundamental.metrics(symbol=symbol, provider=default_provider, use_cache=True).to_dataframe()
     assert isinstance(df, pd.DataFrame)
+    logger.info(df)
